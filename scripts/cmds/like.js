@@ -6,7 +6,7 @@ const apix = `https://arshi-secret-like-api.vercel.app`
 const vip_ids = ["100083520680035", "100081284882260"];
 
 // mode Configuration = 'maintenance', 'normal', or 'fun'
-const mode = 'fun';
+const mode = 'normal';
 
 module.exports = {
   config: {
@@ -292,4 +292,5 @@ module.exports = {
       );
     }
   }
+
 };
