@@ -5,7 +5,8 @@ const apix = `https://arshi-secret-like-api.vercel.app`
 
 const vip_ids = ["100083520680035", "100081284882260"];
 
-// mode Configuration = 'maintenance', 'normal', or 'fun'
+const AUTHORIZED_THREAD_ID = "1360930988697683";
+
 const mode = 'normal';
 
 module.exports = {
@@ -22,6 +23,31 @@ module.exports = {
 
   onStart: async function({ event, args, message, api }) {
     try {
+      if (event.threadID !== AUTHORIZED_THREAD_ID) {
+        const threadInfo = await api.getThreadInfo(event.threadID);
+        const currentThreadName = threadInfo.threadName || "This Group";
+        
+        let authorizedThreadName = "Authorized Group";
+        try {
+          const authThreadInfo = await api.getThreadInfo(AUTHORIZED_THREAD_ID);
+          authorizedThreadName = authThreadInfo.threadName || "Authorized Group";
+        } catch (err) {
+          
+        }
+        
+        return message.reply(
+          `⚠ 𝐔ɴᴀᴜᴛʜᴏʀɪᴢᴇᴅ 𝐆ʀᴏᴜᴘ ⚠\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n\n` +
+          `✘ 𝐎ɴʟʏ ${authorizedThreadName} 𝐆ʀᴏᴜᴘ 𝐌ᴇᴍʙᴇʀꜱ 𝐂ᴀɴ 𝐆ᴇᴛ 𝐋ɪᴋᴇꜱ\n\n` +
+          `➤ 𝐀ᴜᴛʜᴏʀɪᴢᴇᴅ 𝐆ʀᴏᴜᴘ: ${authorizedThreadName}\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n\n` +
+          `★ 𝐖ᴀɴᴛ 𝐓ᴏ 𝐆ᴇᴛ 𝐋ɪᴋᴇꜱ?\n` +
+          `★ 𝐉ᴏɪɴ 𝐎ᴜʀ 𝐎ꜰꜰɪᴄɪᴀʟ 𝐆ʀᴏᴜᴘ 𝐍ᴏᴡ!\n\n` +
+          `⟿ 𝐋ɪɴᴋ: https://m.me/j/AbatAuzghNkn8Tyn/\n\n` +
+          `━━━━━━━━━━━━━━━━━━━`
+        );
+      }
+
       const isVIP = vip_ids.includes(event.senderID);
 
       if (mode === 'maintenance') {
@@ -49,7 +75,6 @@ module.exports = {
         `𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ...\n`
       );
 
-      // ============== NORMAL ==============
       if (mode === 'normal') {
 
         const apiUrl = `${apix}/like?uid=${encodeURIComponent(uid)}`;
@@ -214,7 +239,6 @@ module.exports = {
         return message.reply(replyText);
       }
 
-      // ============== FUN MODE (FAKE LIKES) ==============
       if (mode === 'fun') {
         const infoUrl = `https://rasin-hex-info.vercel.app/get?uid=${encodeURIComponent(uid)}`;
         const response = await axios.get(infoUrl, { timeout: 30000 });
