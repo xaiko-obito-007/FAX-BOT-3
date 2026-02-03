@@ -7,28 +7,28 @@ module.exports = {
     cooldown: 5,
     role: 0,
     prefix: false,
-    description: 'Ramadan prayer times (Suhoor & Iftar) by city or coordinates',
+    description: 'Get Ramadan prayer times (Suhoor & Iftar) by city or coordinates',
     category: 'islamic',
     usage: 'ramadan <city> or ramadan <lat,lng>'
   },
 
   onStart: async function({ event, args, message, api }) {
     try {
-
       if (args.length < 1) {
         return message.reply(`🕌 Please provide a city name`);
       }
 
-  
+     
       const waiting = await message.reply(`🕋 𝐒ᴇᴀʀᴄʜɪɴɢ 𝐑ᴀᴍᴀᴅᴀɴ 𝐓ɪᴍᴇꜱ...\n`);
 
       let latitude, longitude, locationLabel;
       const input = args.join(' ');
 
+
       const coordMatch = input.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
 
       if (coordMatch) {
-     
+        // Input is coordinates
         latitude = parseFloat(coordMatch[1]);
         longitude = parseFloat(coordMatch[2]);
         locationLabel = `${latitude}, ${longitude}`;
@@ -44,14 +44,14 @@ module.exports = {
           );
         }
       } else {
-
+    
         const parts = input.split(',').map(p => p.trim());
         const city = parts[0];
-        const country = parts[1] || 'Bangladesh';
+        const country = parts[1] || 'Bangladesh'; // default country
 
         locationLabel = `${city}, ${country}`;
 
- 
+        // Use AlAdhan's timingsByCity endpoint directly (no geocoding needed)
         const cityUrl = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=2`;
 
         try {
@@ -71,7 +71,7 @@ module.exports = {
             );
           }
 
-
+          // We already have the timing data from city endpoint, use it directly
           message.unsend(waiting.messageID);
           return sendRamadanReply(message, cityData.data, locationLabel);
 
@@ -86,7 +86,7 @@ module.exports = {
         }
       }
 
-   
+      // ─── Fetch by Coordinates ───
       const apiUrl = `https://api.aladhan.com/v1/timings?latitude=${latitude}&longitude=${longitude}&method=2`;
       const response = await axios.get(apiUrl, { timeout: 15000 });
       const data = response.data;
@@ -133,14 +133,13 @@ module.exports = {
   }
 };
 
-
 function sendRamadanReply(message, data, locationLabel) {
   const timings = data.timings;
-  const date = data.date;
-  const meta = data.meta;
+  const gregorian = data.date.gregorian;
+  const hijri = data.date.hijri;
 
-  const formattedDate = `${date.day} ${date.longMonth} ${date.year}`;
-  const hijriDate = `${date.hijri.day} ${date.hijri.longMonth} ${date.hijri.longYear}`;
+  const formattedDate = `${gregorian.day} ${gregorian.month.en} ${gregorian.year}`;
+  const hijriDate = `${hijri.day} ${hijri.month.en} ${hijri.year}`;
 
   let replyText = `🕋 𝐑ᴀᴍᴀᴅᴀɴ 𝐏ʀᴀʏᴇʀ 𝐓ɪᴍᴇꜱ\n\n`;
   replyText += `━━━━━━━━━━━━━━━━━━━\n\n`;
@@ -150,6 +149,7 @@ function sendRamadanReply(message, data, locationLabel) {
 
   replyText += `━━━━━ 🌙 𝐑ᴀᴍᴀᴅᴀɴ 𝐓ɪᴍᴇꜱ ━━━━━\n\n`;
 
+  // Suhoor (last time to eat before dawn)
   replyText += `🌙 𝐒ᴜʜᴏᴏʀ (𝐋ᴀꜱᴛ 𝐄ᴀᴛ): ${timings.Fajr}\n`;
   replyText += `🌅 𝐅ᴀʲʀ (𝐃ᴀᴡɴ):       ${timings.Fajr}\n`;
   replyText += `🌄 𝐒ᴜɴʀɪꜱᴇ:           ${timings.Sunrise}\n`;
