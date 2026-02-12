@@ -5,6 +5,7 @@ module.exports = {
     version: "1.3",
     author: "Rasin",
     countDown: 2,
+    prefix: false,
     role: 1,
     description: "Turn On/Oꜰꜰ Only Admin Oꜰ Group Can Uꜱe Bot",
     category: "box Chat",
