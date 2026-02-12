@@ -25,10 +25,10 @@
   },
   "autoBio": {
     "enabled": true,
-    "bio": "ι'м Mιяα 🧸🎀\nYᴏᴜʀ Pᴇʀꜱᴏɴᴀʟ Bʙ'ᴢ  🧸✨"
+    "bio": "The difference between a believer and a disbeliever is Salah — 🤍✨"
   },
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "Miraaaa 🥹🎀 ",
+  "nickNameBot": "Miraaaa 🥹🎀",
   "prefix": "!",
   "api": "https://rasin-apis.onrender.com",
   "approval": false,
@@ -57,14 +57,14 @@
   ],
   "adminGroup": "9313321558687040",
   "whiteListMode": {
-    "enable": false,
+    "enable": true,
     "whiteListIds": [
       "100083520680035"
     ],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
   "whiteListModeThread": {
-    "enable": false,
+    "enable": true,
     "whiteListThreadIds": [
       "9313321558687040"
     ],
