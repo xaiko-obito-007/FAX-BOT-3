@@ -72,7 +72,7 @@ module.exports = {
 ❍ 𝐍ame: ${basicInfo.nickname || 'N/A'}
 ❍ 𝐔id: ${uid}
 ❍ 𝐋evel: ${basicInfo.level || 'N/A'}
-❍ 𝐑egion: ${res.data.region || basicInfo.region || 'N/A'}
+❍ 𝐑egion: BD
 ❍ 𝐁r 𝐑ank: ${basicInfo.rank || 'N/A'}
 ❍ 𝐁r 𝐑ank 𝐏ointꜱ: ${formatNumber(basicInfo.rankingPoints)}
 ❍ 𝐂ꜱ 𝐑ank: ${basicInfo.csRank || 'N/A'}
