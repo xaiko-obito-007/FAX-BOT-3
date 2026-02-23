@@ -31,9 +31,7 @@ module.exports = {
         try {
           const authThreadInfo = await api.getThreadInfo(AUTHORIZED_THREAD_ID);
           authorizedThreadName = authThreadInfo.threadName || "Authorized Group";
-        } catch (err) {
-          
-        }
+        } catch (err) {}
         
         return message.reply(
           `⚠ 𝐔ɴᴀᴜᴛʜᴏʀɪᴢᴇᴅ 𝐆ʀᴏᴜᴘ ⚠\n\n` +
@@ -77,14 +75,8 @@ module.exports = {
 
       if (mode === 'normal') {
 
-        const apiUrl = `${apix}/like?uid=${encodeURIComponent(uid)}`;
-        const response = await axios.get(apiUrl, { timeout: 30000 });
-        
-        const data = response.data;
-        
-        const isPremium = data.account_type === "Pʀᴇᴍɪᴜᴍ ⭐" || data.premium_status;
-
-        if (!isPremium && !isVIP) {
+        // ✅ COOLDOWN CHECK FIRST - before API call
+        if (!isVIP) {
           const userKey = `${event.senderID}`;
           const now = Date.now();
           const cooldownTime = 12 * 60 * 60 * 1000;
@@ -94,7 +86,7 @@ module.exports = {
             const lastUsedUID = storedData.uid;
             const lastUsedTime = storedData.time;
             const timeLeft = cooldownTime - (now - lastUsedTime);
-            
+
             if (uid !== lastUsedUID) {
               message.unsend(waiting.messageID);
               return message.reply(
@@ -103,15 +95,15 @@ module.exports = {
                 `𝐏ʀᴇᴠɪᴏᴜꜱ 𝐔ɪᴅ: ${lastUsedUID}\n` +
                 `𝐂ᴜʀʀᴇɴᴛ 𝐔ɪᴅ: ${uid}\n\n` +
                 `🚫 𝐈ꜰ 𝐘ᴏᴜ 𝐀ʟʀᴇᴀᴅʏ 𝐋ɪᴋᴇᴅ 𝐀 𝐃ɪꜰꜰᴇʀᴇɴᴛ 𝐔ɪᴅ, 𝐘ᴏᴜ 𝐂𝐀𝐍𝐍𝐎𝐓 𝐋ɪᴋᴇ 𝐀𝐍𝐎𝐓𝐇𝐄𝐑!\n\n` +
-                `⏳ 𝐖𝐚𝐢𝐭 𝟏𝟐 𝐇𝐨𝐮𝐫𝐬 𝐓𝐨 𝐋𝐢𝐤𝐞 𝐀 𝐍𝐞𝐰 𝐔𝐢𝐝\n\n` +
+                `⏳ 𝐖𝐚𝐢𝐭 𝟏𝟐 𝐇𝐨𝐮𝐫𝐬 𝐓𝐨 𝐋𝐢𝐤𝐞 𝐀 𝐍𝐞𝐰 𝐔ɪᴅ\n\n` +
                 `💎 𝐔𝐩𝐠𝐫𝐚𝐝𝐞 𝐓𝐨 𝐏𝐫𝐞𝐦𝐢𝐮𝐦 𝐅𝐨𝐫 𝐍𝐨 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧!\n\n`
               );
             }
-            
+
             if (timeLeft > 0) {
               const hoursLeft = Math.floor(timeLeft / (60 * 60 * 1000));
               const minutesLeft = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
-              
+
               message.unsend(waiting.messageID);
               return message.reply(
                 `⏱️ 𝐂ᴏᴏʟᴅᴏᴡɴ 𝐀ᴄᴛɪᴠᴇ\n\n` +
@@ -125,6 +117,13 @@ module.exports = {
             }
           }
         }
+
+        // ✅ NOW make the API call
+        const apiUrl = `${apix}/like?uid=${encodeURIComponent(uid)}`;
+        const response = await axios.get(apiUrl, { timeout: 30000 });
+        const data = response.data;
+
+        const isPremium = data.account_type === "Pʀᴇᴍɪᴜᴍ ⭐" || data.premium_status;
 
         message.unsend(waiting.messageID);
 
@@ -188,6 +187,7 @@ module.exports = {
           return message.reply("𝐅ᴀɪʟᴇᴅ 𝐓ᴏ 𝐅ᴇᴛᴄʜ 𝐏ʟᴀʏᴇʀ 𝐈ɴꜰᴏʀᴍᴀᴛɪᴏɴ. 𝐏ʟᴇᴀꜱᴇ 𝐂ʜᴇᴄᴋ 𝐓ʜᴇ 𝐔ɪᴅ 𝐀ɴᴅ 𝐓ʀʏ 𝐀ɢᴀɪɴ.");
         }
 
+        // ✅ Set cooldown AFTER successful like
         if (!isPremium && !isVIP) {
           const userKey = `${event.senderID}`;
           const now = Date.now();
@@ -201,7 +201,7 @@ module.exports = {
         replyText += `֎ 𝐑ᴇɢɪᴏɴ: ${playerInfo.region || 'Bangladesh'}\n`;
         replyText += `֎ 𝐀ᴄᴄᴏᴜɴᴛ: ${isVIP ? '𝐕𝐈𝐏 👑' : isPremium ? '𝐏ʀᴇᴍɪᴜᴍ ⭐' : '𝐅ʀᴇᴇ'}\n\n`;
 
-        replyText += `━━━━━ 𝐋ɪᴋᴇ 𝐒ᴇɴᴅ 𝐃ᴇᴛᴀɪʟꜱ ━━━━━\n`;
+        replyText += `━━━━━ 𝐋ɪᴋᴇ 𝐒ᴇɴᴅ  𝐃ᴇᴛᴀɪʟꜱ ━━━━━\n`;
         replyText += `❍ 𝐀ᴅᴅᴇᴅ 𝐋ɪᴋᴇꜱ: ${result.likes_added || 0}\n`;
         replyText += `❍ 𝐁ᴇꜰᴏʀᴇ 𝐋ɪᴋᴇꜱ: ${result.likes_before || 0}\n`;
         replyText += `❍ 𝐀ꜰᴛᴇʀ 𝐋ɪᴋᴇꜱ: ${result.likes_after || 0}\n\n`;
