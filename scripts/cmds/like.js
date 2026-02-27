@@ -233,10 +233,9 @@ module.exports = {
       );
 
     } catch (err) {
-      return message.reply(
-        `⚠️ 𝐀𝐧 𝐄𝐫𝐫𝐨𝐫 𝐎𝐜𝐜𝐮𝐫𝐫𝐞𝐝\n\n` +
-        `𝐏𝐥𝐞𝐚𝐬𝐞 𝐓𝐫𝐲 𝐀𝐠𝐚𝐢𝐧 𝐋𝐚𝐭𝐞𝐫\n`
-      );
-    }
+  return message.reply(
+    `⚠️ ${err.message}\n`
+  );
+}
   }
 };
