@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { getTime } = global.utils;
 
 module.exports = {
   config: {
@@ -9,64 +10,232 @@ module.exports = {
     prefix: false,
     description: 'Get free likes',
     category: 'free fire',
-    usage: 'like <uid>'
+    usage: [
+      'like uid  - Send likes'
+    ].join('\n')
   },
 
-  onStart: async function ({ args, message }) {
-    try {
-      if (args.length < 1) {
-        return message.reply(`𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`);
+  onStart: async function ({ args, message, event, usersData }) {
+    const subCmd = args[0]?.toLowerCase();
+
+    const isAdmin = () => {
+      const adminList = global.GoatBot?.config?.adminBot || [];
+      return adminList.includes(event.senderID);
+    };
+
+    if (subCmd === 'ban') {
+      if (!isAdmin()) {
+        return message.reply(
+          `⛔ 𝐀𝐜𝐜𝐞𝐬𝐬 𝐃𝐞𝐧𝐢𝐞𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐎𝐧𝐥𝐲 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧𝐬 𝐜𝐚𝐧 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝.\n`
+        );
       }
 
-      const uid = args[0];
+      let uid, reason;
 
-      if (!/^\d+$/.test(uid)) {
-        return message.reply(`𝐈ɴᴠᴀʟɪᴅ 𝐔ɪᴅ! 𝐍ᴜᴍʙᴇʀꜱ 𝐎ɴʟʏ.`);
+      if (event.type === 'message_reply') {
+        uid = event.messageReply.senderID;
+        reason = args.slice(1).join(' ').trim();
+      } else if (Object.keys(event.mentions || {}).length > 0) {
+        uid = Object.keys(event.mentions)[0];
+        reason = args.slice(1).join(' ').replace(event.mentions[uid], '').trim();
+      } else if (args[1] && /^\d+$/.test(args[1])) {
+        uid = args[1];
+        reason = args.slice(2).join(' ').trim();
+      } else {
+        return message.reply(
+          `❌ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐒𝐲𝐧𝐭𝐚𝐱!\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `𝐔𝐬𝐚𝐠𝐞:\n` +
+          `• like ban @tag [reason]\n` +
+          `• like ban (reply to msg) [reason]\n`
+        );
+      }
+
+      if (!uid) return message.reply(`❌ 𝐂𝐨𝐮𝐥𝐝 𝐧𝐨𝐭 𝐝𝐞𝐭𝐞𝐫𝐦𝐢𝐧𝐞 𝐔𝐬𝐞𝐫.`);
+      if (!reason || reason === '') reason = 'Banned from using like command';
+      reason = reason.replace(/\s+/g, ' ');
+
+      const userData = await usersData.get(uid);
+      const name = userData.name || 'Unknown';
+      const likeBanned = userData.likeBanned || {};
+
+      if (likeBanned.status) {
+        return message.reply(
+          `⚠️ 𝐔𝐬𝐞𝐫 𝐀𝐥𝐫𝐞𝐚𝐝𝐲 𝐁𝐚𝐧𝐧𝐞𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `֎ 𝐍𝐚𝐦𝐞: ${name}\n` +
+          `❍ 𝐑𝐞𝐚𝐬𝐨𝐧: ${likeBanned.reason}\n` +
+          `❍ 𝐃𝐚𝐭𝐞: ${likeBanned.date}\n`
+        );
+      }
+
+      const time = getTime("DD/MM/YYYY HH:mm:ss");
+
+      await usersData.set(uid, {
+        likeBanned: {
+          status: true,
+          reason,
+          date: time
+        }
+      });
+
+      return message.reply(
+        `✅ 𝐔𝐬𝐞𝐫 𝐁𝐚𝐧𝐧𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `֎ 𝐍𝐚𝐦𝐞: ${name}\n` +
+        `❍ 𝐑𝐞𝐚𝐬𝐨𝐧: ${reason}\n` +
+        `❍ 𝐃𝐚𝐭𝐞: ${time}\n`
+      );
+    }
+
+    if (subCmd === 'unban') {
+      if (!isAdmin()) {
+        return message.reply(
+          `⛔ 𝐀𝐜𝐜𝐞𝐬𝐬 𝐃𝐞𝐧𝐢𝐞𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐎𝐧𝐥𝐲 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧𝐬 𝐜𝐚𝐧 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝.\n`
+        );
+      }
+
+      let uid;
+
+      if (event.type === 'message_reply') {
+        uid = event.messageReply.senderID;
+      } else if (Object.keys(event.mentions || {}).length > 0) {
+        uid = Object.keys(event.mentions)[0];
+      } else if (args[1] && /^\d+$/.test(args[1])) {
+        uid = args[1];
+      } else {
+        return message.reply(
+          `❌ 𝐈𝐧𝐯𝐚𝐥𝐢𝐝 𝐒𝐲𝐧𝐭𝐚𝐱!\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `𝐔𝐬𝐚𝐠𝐞:\n` +
+          `• like unban @tag\n` +
+          `• like unban (reply to msg)\n`
+        );
+      }
+
+      const userData = await usersData.get(uid);
+      const name = userData.name || 'Unknown';
+      const likeBanned = userData.likeBanned || {};
+
+      if (!likeBanned.status) {
+        return message.reply(
+          `⚠️ 𝐔𝐬𝐞𝐫 𝐈𝐬 𝐍𝐨𝐭 𝐁𝐚𝐧𝐧𝐞𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `֎ 𝐍𝐚𝐦𝐞: ${name}\n`
+        );
+      }
+
+      await usersData.set(uid, { likeBanned: {} });
+
+      return message.reply(
+        `✅ 𝐔𝐬𝐞𝐫 𝐔𝐧𝐛𝐚𝐧𝐧𝐞𝐝 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `֎ 𝐍𝐚𝐦𝐞: ${name}\n` +
+        `❍ 𝐓𝐡𝐢𝐬 𝐮𝐬𝐞𝐫 𝐜𝐚𝐧 𝐧𝐨𝐰 𝐮𝐬𝐞 𝐭𝐡𝐞 𝐥𝐢𝐤𝐞 𝐜𝐨𝐦𝐦𝐚𝐧𝐝 𝐚𝐠𝐚𝐢𝐧.\n`
+      );
+    }
+
+
+    if (subCmd === 'banlist') {
+      if (!isAdmin()) {
+        return message.reply(
+          `⛔ 𝐀𝐜𝐜𝐞𝐬𝐬 𝐃𝐞𝐧𝐢𝐞𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐎𝐧𝐥𝐲 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧𝐬 𝐜𝐚𝐧 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝.\n`
+        );
+      }
+
+      const allUsers = await usersData.getAll();
+      const bannedUsers = allUsers.filter(u => u.likeBanned && u.likeBanned.status === true);
+
+      if (bannedUsers.length === 0) {
+        return message.reply(
+          `📋 𝗟𝗶𝗸𝗲 𝗕𝗮𝗻 𝗟𝗶𝘀𝘁\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐍𝐨 𝐛𝐚𝐧𝐧𝐞𝐝 𝐮𝐬𝐞𝐫𝐬 𝐟𝐨𝐮𝐧𝐝.\n`
+        );
+      }
+
+      const msg = bannedUsers.map((user, index) =>
+        `${index + 1}. ${user.name || 'Unknown'}\n` +
+        `   ├ 𝐑𝐞𝐚𝐬𝐨𝐧: ${user.likeBanned.reason || 'No reason'}\n` +
+        `   └ 𝐃𝐚𝐭𝐞: ${user.likeBanned.date || 'Unknown'}`
+      ).join('\n\n');
+
+      return message.reply(
+        `📋 𝗟𝗶𝗸𝗲 𝗕𝗮𝗻 𝗟𝗶𝘀𝘁\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `𝐓𝐨𝐭𝐚𝐥: ${bannedUsers.length} 𝐮𝐬𝐞𝐫(𝐬)\n\n` +
+        `${msg}`
+      );
+    }
+
+    try {
+      if (args.length < 1) {
+        return message.reply(`❓ 𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`);
+      }
+
+      const ffUID = args[0];
+
+      if (!/^\d+$/.test(ffUID)) {
+        return message.reply(`𝐈ɴᴠᴀʟɪᴅ 𝐔ɪᴅ! 𝐍ᴜᴍʙᴇʀꜱ 𝐎ɴʟʏ !!`);
+      }
+
+      const senderData = await usersData.get(event.senderID);
+      const likeBanned = senderData.likeBanned || {};
+
+      if (likeBanned.status) {
+        return message.reply(
+          `🚫 𝐘𝐨𝐮 𝐀𝐫𝐞 𝐁𝐚𝐧𝐧𝐞𝐝 𝐅𝐫𝐨𝐦 𝐔𝐬𝐢𝐧𝐠 𝐓𝐡𝐢𝐬 𝐂𝐨𝐦𝐦𝐚𝐧𝐝\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐑𝐞𝐚𝐬𝐨𝐧: ${likeBanned.reason}\n` +
+          `❍ 𝐁𝐚𝐧𝐧𝐞𝐝 𝐎𝐧: ${likeBanned.date}\n`
+        );
       }
 
       const waiting = await message.reply(`𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ...`);
 
-      const apiUrl = `https://rasin-hex-likes.vercel.app/dristy/like?uid=${encodeURIComponent(uid)}`;
+      const apiUrl = `https://rasin-hex-likes.vercel.app/dristy/like?uid=${encodeURIComponent(ffUID)}`;
       const response = await axios.get(apiUrl, { timeout: 30000 });
-
       message.unsend(waiting.messageID);
 
       const data = response.data;
 
       if (!data || !data.status) {
+        const errorMsg = data?.error || 'Failed to send likes';
         return message.reply(
-          `𝐅ᴀɪʟᴇᴅ 𝐓ᴏ 𝐒ᴇɴᴅ 𝐋ɪᴋᴇꜱ\n\n` +
-          `━━━━━━━━━━━━━━━━━━━`
+          `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
+          `❍ ${errorMsg}\n`
         );
       }
 
       if (data.likes_added === 0) {
         return message.reply(
           `${data.status}\n\n` +
-          `━━━━━━━━━━━━━━━━━━━\n\n` +
-          `֎ 𝐍ᴀᴍᴇ: ${data.Nickname || 'Unknown'}\n` +
-          `֎ 𝐔ɪᴅ: ${data.UID || uid}\n\n` +
-          `❍ 𝐁ᴇꜰᴏʀᴇ 𝐋ɪᴋᴇꜱ: ${data.likes_before}\n` +
-          `❍ 𝐀ꜰᴛᴇʀ 𝐋ɪᴋᴇꜱ: ${data.likes_after}\n\n` +
-          `━━━━━━━━━━━━━━━━━━━`
+          `֎ Nickname: ${data.Nickname || 'Unknown'}\n` +
+          `֎ UID: ${data.UID || ffUID}\n\n` +
+          `❍ Before Likes: ${data.likes_before}\n` +
+          `❍ After Likes: ${data.likes_after}`
         );
       }
 
       return message.reply(
         `✅ ${data.status}\n\n` +
-        `━━━━━━━━━━━━━━━━━━━\n\n` +
-        `֎ 𝐍ᴀᴍᴇ: ${data.Nickname || 'Unknown'}\n` +
-        `֎ 𝐔ɪᴅ: ${data.UID || uid}\n\n` +
-        `❍ 𝐀ᴅᴅᴇᴅ 𝐋ɪᴋᴇꜱ: ${data.likes_added}\n` +
-        `❍ 𝐁ᴇꜰᴏʀᴇ 𝐋ɪᴋᴇꜱ: ${data.likes_before}\n` +
-        `❍ 𝐀ꜰᴛᴇʀ 𝐋ɪᴋᴇꜱ: ${data.likes_after}`
+        `֎ Nickname: ${data.Nickname || 'Unknown'}\n` +
+        `֎ UID: ${data.UID || ffUID}\n\n` +
+        `❍ Added Likes: ${data.likes_added}\n` +
+        `❍ Before Likes: ${data.likes_before}\n` +
+        `❍ After Likes: ${data.likes_after}`
       );
 
     } catch (err) {
       return message.reply(
-        `𝐀ɴ 𝐄ʀʀᴏʀ 𝐎ᴄᴄᴜʀʀᴇᴅ\n\n` +
-        `𝐏ʟᴇᴀꜱᴇ 𝐓ʀʏ 𝐀ɢᴀɪɴ 𝐋ᴀᴛᴇʀ\n` +
-        `━━━━━━━━━━━━━━━━━━━`
+        `⚠️ 𝐀𝐧 𝐄𝐫𝐫𝐨𝐫 𝐎𝐜𝐜𝐮𝐫𝐫𝐞𝐝\n\n` +
+        `𝐏𝐥𝐞𝐚𝐬𝐞 𝐓𝐫𝐲 𝐀𝐠𝐚𝐢𝐧 𝐋𝐚𝐭𝐞𝐫\n`
       );
     }
   }
