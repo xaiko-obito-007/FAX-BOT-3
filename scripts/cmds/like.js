@@ -233,10 +233,12 @@ module.exports = {
       );
 
     } catch (err) {
+  const apiError = err.response?.data?.error;
   return message.reply(
-    `⚠️ ${err.message}\n`
+    `⚠️ ${apiError || err.message}\n`
   );
 }
   }
 };
+
 
