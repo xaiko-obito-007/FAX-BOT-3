@@ -199,7 +199,7 @@ module.exports = {
 
       const waiting = await message.reply(`𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ...`);
 
-      const apiUrl = `https://rasin-hex-likes.vercel.app/dristy/like?uid=${encodeURIComponent(ffUID)}`;
+      const apiUrl = `https://rasin-hex-likes.vercel.app/dristybbz/likex?uid=${encodeURIComponent(ffUID)}`;
       const response = await axios.get(apiUrl, { timeout: 30000 });
       message.unsend(waiting.messageID);
 
@@ -239,3 +239,4 @@ module.exports = {
 }
   }
 };
+
