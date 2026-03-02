@@ -2,7 +2,7 @@ const axios = require('axios');
 const { getTime } = global.utils;
 
 const xhours = 12;
-const xms= xhours * 60 * 60 * 1000;
+const xms = xhours * 60 * 60 * 1000;
 
 module.exports = {
   config: {
@@ -203,7 +203,7 @@ module.exports = {
       const now = Date.now();
       const elapsed = now - lastUsed;
 
-      if (elapsed < COOLDOWN_MS) {
+      if (elapsed < xms) {
         const remaining = xms- elapsed;
         const hours = Math.floor(remaining / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
