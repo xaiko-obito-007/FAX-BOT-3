@@ -186,7 +186,6 @@ module.exports = {
 
       const senderData = await usersData.get(event.senderID);
 
-
       const likeBanned = senderData.likeBanned || {};
       if (likeBanned.status) {
         return message.reply(
@@ -197,21 +196,19 @@ module.exports = {
         );
       }
 
-
       const likeUsage = senderData.likeUsage || {};
       const lastUsed = likeUsage.lastUsed || 0;
       const now = Date.now();
       const elapsed = now - lastUsed;
 
-      if (elapsed < xms) {
-        const remaining = xms- elapsed;
+
+      if (!isAdmin() && elapsed < xms) {
+        const remaining = xms - elapsed;
         const hours = Math.floor(remaining / (1000 * 60 * 60));
         const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
 
         return message.reply(
-          `⏳ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧 𝐀𝐜𝐭𝐢𝐯𝐞!\n\n` +
-          `━━━━━━━━━━━━━━━━━━━\n` +
           `❍ 𝐘𝐨𝐮 𝐜𝐚𝐧 𝐨𝐧𝐥𝐲 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝 𝐨𝐧𝐜𝐞 𝐞𝐯𝐞𝐫𝐲 ${xhours} 𝐡𝐨𝐮𝐫𝐬.\n` +
           `❍ 𝐓𝐫𝐲 𝐚𝐠𝐚𝐢𝐧 𝐢𝐧: ${hours}𝐡 ${minutes}𝐦 ${seconds}𝐬\n`
         );
@@ -234,9 +231,11 @@ module.exports = {
       }
 
 
-      await usersData.set(event.senderID, {
-        likeUsage: { lastUsed: now }
-      });
+      if (!isAdmin()) {
+        await usersData.set(event.senderID, {
+          likeUsage: { lastUsed: now }
+        });
+      }
 
       if (data.likes_added === 0) {
         return message.reply(
