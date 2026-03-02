@@ -24,6 +24,10 @@ const userModel = new Schema({
 		type: Object,
 		default: {}
 	},
+	likeUsage: {
+		type: Object,
+		default: {}
+	},
 	settings: {
 		type: Object,
 		default: {}
