@@ -1,6 +1,9 @@
 const axios = require('axios');
 const { getTime } = global.utils;
 
+const xhours = 12;
+const xms= xhours * 60 * 60 * 1000;
+
 module.exports = {
   config: {
     name: 'like',
@@ -72,13 +75,8 @@ module.exports = {
       }
 
       const time = getTime("DD/MM/YYYY HH:mm:ss");
-
       await usersData.set(uid, {
-        likeBanned: {
-          status: true,
-          reason,
-          date: time
-        }
+        likeBanned: { status: true, reason, date: time }
       });
 
       return message.reply(
@@ -174,6 +172,7 @@ module.exports = {
       );
     }
 
+
     try {
       if (args.length < 1) {
         return message.reply(`❓ 𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`);
@@ -186,14 +185,35 @@ module.exports = {
       }
 
       const senderData = await usersData.get(event.senderID);
-      const likeBanned = senderData.likeBanned || {};
 
+
+      const likeBanned = senderData.likeBanned || {};
       if (likeBanned.status) {
         return message.reply(
           `🚫 𝐘𝐨𝐮 𝐀𝐫𝐞 𝐁𝐚𝐧𝐧𝐞𝐝 𝐅𝐫𝐨𝐦 𝐔𝐬𝐢𝐧𝐠 𝐓𝐡𝐢𝐬 𝐂𝐨𝐦𝐦𝐚𝐧𝐝\n\n` +
           `━━━━━━━━━━━━━━━━━━━\n` +
           `❍ 𝐑𝐞𝐚𝐬𝐨𝐧: ${likeBanned.reason}\n` +
           `❍ 𝐁𝐚𝐧𝐧𝐞𝐝 𝐎𝐧: ${likeBanned.date}\n`
+        );
+      }
+
+
+      const likeUsage = senderData.likeUsage || {};
+      const lastUsed = likeUsage.lastUsed || 0;
+      const now = Date.now();
+      const elapsed = now - lastUsed;
+
+      if (elapsed < COOLDOWN_MS) {
+        const remaining = xms- elapsed;
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+        return message.reply(
+          `⏳ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧 𝐀𝐜𝐭𝐢𝐯𝐞!\n\n` +
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ 𝐘𝐨𝐮 𝐜𝐚𝐧 𝐨𝐧𝐥𝐲 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝 𝐨𝐧𝐜𝐞 𝐞𝐯𝐞𝐫𝐲 ${xhours} 𝐡𝐨𝐮𝐫𝐬.\n` +
+          `❍ 𝐓𝐫𝐲 𝐚𝐠𝐚𝐢𝐧 𝐢𝐧: ${hours}𝐡 ${minutes}𝐦 ${seconds}𝐬\n`
         );
       }
 
@@ -212,6 +232,11 @@ module.exports = {
           `❍ ${errorMsg}\n`
         );
       }
+
+
+      await usersData.set(event.senderID, {
+        likeUsage: { lastUsed: now }
+      });
 
       if (data.likes_added === 0) {
         return message.reply(
@@ -233,12 +258,10 @@ module.exports = {
       );
 
     } catch (err) {
-  const apiError = err.response?.data?.error;
-  return message.reply(
-    `⚠️ ${apiError || err.message}\n`
-  );
-}
+      const apiError = err.response?.data?.error;
+      return message.reply(
+        `⚠️ ${apiError || err.message}\n`
+      );
+    }
   }
 };
-
-
