@@ -4,6 +4,9 @@ const { getTime } = global.utils;
 const xhours = 12;
 const xms = xhours * 60 * 60 * 1000;
 
+const x_api = (uid) => `https://dev-rasin-api.onrender.com/like?uid=${encodeURIComponent(uid)}`;
+const y_api = (uid) => `https://noobs-api.top/dipto/ff-like?uid=${encodeURIComponent(uid)}`;
+
 module.exports = {
   config: {
     name: 'like',
@@ -137,7 +140,6 @@ module.exports = {
       );
     }
 
-
     if (subCmd === 'banlist') {
       if (!isAdmin()) {
         return message.reply(
@@ -172,7 +174,6 @@ module.exports = {
       );
     }
 
-
     try {
       if (args.length < 1) {
         return message.reply(`❓ 𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`);
@@ -201,7 +202,6 @@ module.exports = {
       const now = Date.now();
       const elapsed = now - lastUsed;
 
-
       if (!isAdmin() && elapsed < xms) {
         const remaining = xms - elapsed;
         const hours = Math.floor(remaining / (1000 * 60 * 60));
@@ -216,20 +216,50 @@ module.exports = {
 
       const waiting = await message.reply(`𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ...`);
 
-      const apiUrl = `https://dev-rasin-api.onrender.com/like?uid=${encodeURIComponent(ffUID)}`;
-      const response = await axios.get(apiUrl, { timeout: 30000 });
+      const [xResult, yResult] = await Promise.allSettled([
+        axios.get(x_api(ffUID), { timeout: 30000 }),
+        axios.get(y_api(ffUID), { timeout: 30000 })
+      ]);
+
       message.unsend(waiting.messageID);
 
-      const data = response.data;
+      let xData = null;
+      let xOk = false;
+      if (xResult.status === 'fulfilled') {
+        xData = xResult.value.data;
+        xOk = !!(xData && xData.status);
+      }
 
-      if (!data || !data.status) {
-        const errorMsg = data?.error || 'Failed to send likes';
+      let yData = null;
+      let yOk = false;
+      if (yResult.status === 'fulfilled') {
+        yData = yResult.value.data;
+        yOk = !!(yData && yData.Status === 'Success');
+      }
+
+      if (!xOk && !yOk) {
+        const xErr = xData?.error || xResult.reason?.message || 'Failed';
+        const yErr = yData?.error || yResult.reason?.message || 'Failed';
         return message.reply(
           `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
-          `❍ ${errorMsg}\n`
+          `━━━━━━━━━━━━━━━━━━━\n` +
+          `❍ ${xErr}\n` +
+          `❍ ${yErr}\n`
         );
       }
 
+      const nickname = (xOk ? xData.Nickname : null)
+                    || (yOk ? yData.PlayerNickname : null)
+                    || 'Unknown';
+
+      const xAdded = xOk ? (xData.likes_added ?? 0) : 0;
+      const yAdded = yOk ? (yData.LikesGiven ?? 0) : 0;
+      const totalAdded = xAdded + yAdded;
+
+      const beforeLikes = xOk ? (xData.likes_before ?? yData?.LikesBeforeProcess ?? 0)
+                               : (yData?.LikesBeforeProcess ?? 0);
+      const afterLikes  = xOk ? (xData.likes_after ?? yData?.LikesAfterProcess ?? 0)
+                               : (yData?.LikesAfterProcess ?? 0);
 
       if (!isAdmin()) {
         await usersData.set(event.senderID, {
@@ -237,23 +267,14 @@ module.exports = {
         });
       }
 
-      if (data.likes_added === 0) {
-        return message.reply(
-          `${data.status}\n\n` +
-          `֎ Nickname: ${data.Nickname || 'Unknown'}\n` +
-          `֎ UID: ${data.UID || ffUID}\n\n` +
-          `❍ Before Likes: ${data.likes_before}\n` +
-          `❍ After Likes: ${data.likes_after}`
-        );
-      }
-
       return message.reply(
-        `✅ ${data.status}\n\n` +
-        `֎ Nickname: ${data.Nickname || 'Unknown'}\n` +
-        `֎ UID: ${data.UID || ffUID}\n\n` +
-        `❍ Added Likes: ${data.likes_added}\n` +
-        `❍ Before Likes: ${data.likes_before}\n` +
-        `❍ After Likes: ${data.likes_after}`
+        `✅ 𝐋𝐢𝐤𝐞𝐬 𝐒𝐞𝐧𝐭 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
+        `━━━━━━━━━━━━━━━━━━━\n` +
+        `֎ 𝐍𝐢𝐜𝐤𝐧𝐚𝐦𝐞: ${nickname}\n` +
+        `֎ 𝐔𝐈𝐃: ${ffUID}\n\n` +
+        `❍ 𝐁𝐞𝐟𝐨𝐫𝐞 𝐋𝐢𝐤𝐞𝐬: ${beforeLikes}\n` +
+        `❍ 𝐀𝐟𝐭𝐞𝐫 𝐋𝐢𝐤𝐞𝐬: ${afterLikes}\n` +
+        `❍ 𝐓𝐨𝐭𝐚𝐥 𝐀𝐝𝐝𝐞𝐝: ${totalAdded}\n`
       );
 
     } catch (err) {
@@ -264,4 +285,3 @@ module.exports = {
     }
   }
 };
-
