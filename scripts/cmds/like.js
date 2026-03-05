@@ -174,6 +174,7 @@ module.exports = {
       );
     }
 
+
     try {
       if (args.length < 1) {
         return message.reply(`❓ 𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`);
@@ -243,8 +244,8 @@ module.exports = {
         return message.reply(
           `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
           `━━━━━━━━━━━━━━━━━━━\n` +
-          `❍ ${xErr}\n` +
-          `❍ ${yErr}\n`
+          `❍ 𝐗 𝐀𝐏𝐈: ${xErr}\n` +
+          `❍ 𝐘 𝐀𝐏𝐈: ${yErr}\n`
         );
       }
 
@@ -256,16 +257,22 @@ module.exports = {
       const yAdded = yOk ? (yData.LikesGiven ?? 0) : 0;
       const totalAdded = xAdded + yAdded;
 
-      const beforeLikes = xOk ? (xData.likes_before ?? yData?.LikesBeforeProcess ?? 0)
-                               : (yData?.LikesBeforeProcess ?? 0);
-      const afterLikes  = xOk ? (xData.likes_after ?? yData?.LikesAfterProcess ?? 0)
-                               : (yData?.LikesAfterProcess ?? 0);
+      const beforeLikes = xOk ? (xData.likes_before ?? 0) : (yData?.LikesBeforeProcess ?? 0);
+      const afterLikes = beforeLikes + totalAdded;
 
       if (!isAdmin()) {
         await usersData.set(event.senderID, {
           likeUsage: { lastUsed: now }
         });
       }
+
+      const xLine = xOk
+        ? `✅ 𝐗 𝐀𝐏𝐈 (𝐑𝐚𝐬𝐢𝐧): +${xAdded} 𝐋𝐢𝐤𝐞𝐬`
+        : `⚠️ 𝐗 𝐀𝐏𝐈 (𝐑𝐚𝐬𝐢𝐧): ${xData?.error || 'Failed'}`;
+
+      const yLine = yOk
+        ? `✅ 𝐘 𝐀𝐏𝐈 (𝐍𝐨𝐨𝐛𝐬): +${yAdded} 𝐋𝐢𝐤𝐞𝐬`
+        : `⚠️ 𝐘 𝐀𝐏𝐈 (𝐍𝐨𝐨𝐛𝐬): ${yData?.error || 'Failed'}`;
 
       return message.reply(
         `✅ 𝐋𝐢𝐤𝐞𝐬 𝐒𝐞𝐧𝐭 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
@@ -285,3 +292,4 @@ module.exports = {
     }
   }
 };
+      
