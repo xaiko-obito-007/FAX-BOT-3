@@ -217,35 +217,30 @@ module.exports = {
 
       const waiting = await message.reply(`𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ...`);
 
-      const [xResult, yResult] = await Promise.allSettled([
-        axios.get(x_api(ffUID), { timeout: 30000 }),
-        axios.get(y_api(ffUID), { timeout: 30000 })
-      ]);
-
-      message.unsend(waiting.messageID);
-
       let xData = null;
       let xOk = false;
-      if (xResult.status === 'fulfilled') {
-        xData = xResult.value.data;
+      try {
+        const xRes = await axios.get(x_api(ffUID), { timeout: 30000 });
+        xData = xRes.data;
         xOk = !!(xData && xData.status);
-      }
+      } catch (e) {}
 
       let yData = null;
       let yOk = false;
-      if (yResult.status === 'fulfilled') {
-        yData = yResult.value.data;
+      try {
+        const yRes = await axios.get(y_api(ffUID), { timeout: 30000 });
+        yData = yRes.data;
         yOk = !!(yData && yData.Status === 'Success');
-      }
+      } catch (e) {}
+
+      message.unsend(waiting.messageID);
 
       if (!xOk && !yOk) {
-        const xErr = xData?.error || xResult.reason?.message || 'Failed';
-        const yErr = yData?.error || yResult.reason?.message || 'Failed';
         return message.reply(
           `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
           `━━━━━━━━━━━━━━━━━━━\n` +
-          `❍ 𝐗 𝐀𝐏𝐈: ${xErr}\n` +
-          `❍ 𝐘 𝐀𝐏𝐈: ${yErr}\n`
+          `❍ ${xData?.error || 'API 1 Failed'}\n` +
+          `❍ ${yData?.error || 'API 2 Failed'}\n`
         );
       }
 
@@ -256,9 +251,8 @@ module.exports = {
       const xAdded = xOk ? (xData.likes_added ?? 0) : 0;
       const yAdded = yOk ? (yData.LikesGiven ?? 0) : 0;
       const totalAdded = xAdded + yAdded;
-
       const beforeLikes = xOk ? (xData.likes_before ?? 0) : (yData?.LikesBeforeProcess ?? 0);
-      const afterLikes = beforeLikes + totalAdded;
+      const afterLikes = yOk ? (yData.LikesAfterProcess ?? 0) : (xData?.likes_after ?? 0);
 
       if (!isAdmin()) {
         await usersData.set(event.senderID, {
@@ -266,13 +260,7 @@ module.exports = {
         });
       }
 
-      const xLine = xOk
-        ? `✅ 𝐗 𝐀𝐏𝐈 (𝐑𝐚𝐬𝐢𝐧): +${xAdded} 𝐋𝐢𝐤𝐞𝐬`
-        : `⚠️ 𝐗 𝐀𝐏𝐈 (𝐑𝐚𝐬𝐢𝐧): ${xData?.error || 'Failed'}`;
 
-      const yLine = yOk
-        ? `✅ 𝐘 𝐀𝐏𝐈 (𝐍𝐨𝐨𝐛𝐬): +${yAdded} 𝐋𝐢𝐤𝐞𝐬`
-        : `⚠️ 𝐘 𝐀𝐏𝐈 (𝐍𝐨𝐨𝐛𝐬): ${yData?.error || 'Failed'}`;
 
       return message.reply(
         `✅ 𝐋𝐢𝐤𝐞𝐬 𝐒𝐞𝐧𝐭 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
@@ -292,4 +280,3 @@ module.exports = {
     }
   }
 };
-      
