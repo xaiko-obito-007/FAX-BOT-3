@@ -1,21 +1,21 @@
-const axios = require('axios');
-const { getTime } = global.utils;
+const axios = require('axios')
+const { getTime } = global.utils
 
-const xhours = 12;
-const xms = xhours * 60 * 60 * 1000;
+const xhours = 12
+const xms = xhours * 60 * 60 * 1000
 
-const AUTH_THREAD = "921210833794737";
+const auth_thread = "921210833794737"
 
-const x_api = (uid) => `https://dev-rasin-api.onrender.com/like?uid=${encodeURIComponent(uid)}`;
-const y_api = (uid) => `https://noobs-api.top/dipto/ff-like?uid=${encodeURIComponent(uid)}`;
+const x_api = (uid) => `https://dev-rasin-api.onrender.com/like?uid=${encodeURIComponent(uid)}`
+const y_api = (uid) => `https://noobs-api.top/dipto/ff-like?uid=${encodeURIComponent(uid)}`
 
 const NOTICE =
   `⚠️ 𝐈𝐦𝐩𝐨𝐫𝐭𝐚𝐧𝐭 𝐍𝐨𝐭𝐢𝐜𝐞\n\n` +
   `━━━━━━━━━━━━━━━━━━━\n` +
-  `❍ This command is now a paid feature.\n` +
-  `❍ Free likes are no longer available.\n` +
-  `❍ Only authorized members can use this command.\n\n` +
-  `📌 Contact the bot admin to get access\n`;
+  `1️⃣ This command is now a paid feature\n` +
+  `2️⃣ Free likes are no longer available\n` +
+  `3️⃣ Only authorized members can use this command\n\n` +
+  `Contact the bot admin to get access 🫡\n\n\nSorry Everyone 🥲`
 
 module.exports = {
   config: {
@@ -41,7 +41,7 @@ module.exports = {
     };
 
     const isAuthorized = () => {
-      return isAdmin() || threadID === AUTH_THREAD;
+      return isAdmin() || threadID === auth_thread;
     };
 
     if (subCmd === 'ban') {
@@ -49,7 +49,7 @@ module.exports = {
         return message.reply(
           `⛔ 𝐀𝐜𝐜𝐞𝐬𝐬 𝐃𝐞𝐧𝐢𝐞𝐝\n\n` +
           `━━━━━━━━━━━━━━━━━━━\n` +
-          `❍ Only bot admins can use this command.\n`
+          `❍ Only bot admins can use this command\n`
         );
       }
 
@@ -228,37 +228,42 @@ module.exports = {
         const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
 
         return message.reply(
-          `⏳ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧 𝐀𝐜𝐭𝐢𝐯𝐞\n\n` +
-          `━━━━━━━━━━━━━━━━━━━\n` +
-          `❍ You can only use this command once every ${xhours} hours.\n` +
-          `❍ Try again in: ${hours}h ${minutes}m ${seconds}s\n`
+          `❍ 𝐘𝐨𝐮 𝐜𝐚𝐧 𝐨𝐧𝐥𝐲 𝐮𝐬𝐞 𝐭𝐡𝐢𝐬 𝐜𝐨𝐦𝐦𝐚𝐧𝐝 𝐨𝐧𝐜𝐞 𝐞𝐯𝐞𝐫𝐲 ${xhours} 𝐡𝐨𝐮𝐫𝐬.\n` +
+          `❍ 𝐓𝐫𝐲 𝐚𝐠𝐚𝐢𝐧 𝐢𝐧: ${hours}𝐡 ${minutes}𝐦 ${seconds}𝐬\n`
         );
       }
 
-      const waiting = await message.reply(`⏳ Processing your request...`);
+      const waiting = await message.reply(`𝐏ʀᴏᴄᴇꜱꜱɪɴɢ 𝐘ᴏᴜʀ 𝐑ᴇϙᴜᴇꜱᴛ`);
 
-      let xData = null, xOk = false;
+
+      let xData = null, xOk = false, xErr = null;
       try {
         const xRes = await axios.get(x_api(ffUID), { timeout: 30000 });
         xData = xRes.data;
         xOk = !!(xData && xData.status);
-      } catch (e) {}
+        if (!xOk) xErr = xData?.error || 'x_api Failed';
+      } catch (e) {
+        xErr = e.response?.data?.error || 'y_api Failed';
+      }
 
-      let yData = null, yOk = false;
+      
+      let yData = null, yOk = false, yErr = null;
       try {
         const yRes = await axios.get(y_api(ffUID), { timeout: 30000 });
         yData = yRes.data;
         yOk = !!(yData && yData.Status === 'Success');
-      } catch (e) {}
+        if (!yOk) yErr = yData?.error || 'API 2 Failed';
+      } catch (e) {
+        yErr = e.response?.data?.error || 'API 2 Failed';
+      }
 
       message.unsend(waiting.messageID);
 
+    
       if (!xOk && !yOk) {
         return message.reply(
           `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
-          `━━━━━━━━━━━━━━━━━━━\n` +
-          `❍ ${xData?.error || 'API 1 Failed'}\n` +
-          `❍ ${yData?.error || 'API 2 Failed'}\n`
+          `❍ ${xErr}\n`
         );
       }
 
