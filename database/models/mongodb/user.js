@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+
 const userModel = new Schema({
 	userID: {
 		type: String,
@@ -28,6 +29,10 @@ const userModel = new Schema({
 		type: Object,
 		default: {}
 	},
+	likeLimit: {
+		type: Object,
+		default: {}
+	},
 	settings: {
 		type: Object,
 		default: {}
@@ -40,4 +45,5 @@ const userModel = new Schema({
 	timestamps: true,
 	minimize: false
 });
+
 module.exports = mongoose.model("users", userModel);
