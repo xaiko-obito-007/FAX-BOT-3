@@ -439,10 +439,10 @@ module.exports = {
       return message.reply(
         `✅ 𝐋𝐢𝐤𝐞𝐬 𝐒𝐞𝐧𝐭 𝐒𝐮𝐜𝐜𝐞𝐬𝐬𝐟𝐮𝐥𝐥𝐲\n\n` +
         `֎ 𝐍𝐢𝐜𝐤𝐧𝐚𝐦𝐞: ${nickname}\n` +
-        `֎ 𝐔𝐈𝐃: ${ffUID}\n` +
+        `֎ 𝐔𝐈𝐃: ${ffUID}\n\n` +
         `❍ 𝐁𝐞𝐟𝐨𝐫𝐞 𝐋𝐢𝐤𝐞𝐬: ${beforeLikes}\n` +
         `❍ 𝐀𝐟𝐭𝐞𝐫 𝐋𝐢𝐤𝐞𝐬: ${afterLikes}\n` +
-        `❍ 𝐓𝐨𝐭𝐚𝐥 𝐀𝐝𝐝𝐞𝐝: ${totalAdded}` +
+        `❍ 𝐓𝐨𝐭𝐚𝐥 𝐀𝐝𝐝𝐞𝐝: ${totalAdded}\n\n` +
         `${usageTag}`
       )
 
