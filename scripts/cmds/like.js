@@ -19,6 +19,8 @@ const NOTICE =
 
 const getMainAdminID = () => global.GoatBot?.config?.adminBot?.[0]
 
+const processingUsers = new Set()
+
 async function getLimitDoc(usersData) {
   const adminID = getMainAdminID()
   if (!adminID) return {}
@@ -43,8 +45,9 @@ module.exports = {
     category: 'free fire',
     usage: [
       'like <uid>           - Send likes',
-      'like limit <num>     - Set limit(admin)',
+      'like limit <num>     - Set limit (admin)',
       'like limit reset     - Reset limit (admin)',
+      'like limit status    - Check limit status',
     ].join('\n')
   },
 
@@ -313,30 +316,6 @@ module.exports = {
         return message.reply(NOTICE)
       }
 
-      if (!isAdmin() && specialDay) {
-        const used    = limitDoc.used    ?? 0
-        const max     = limitDoc.max     ?? 0
-        const usedIDs = limitDoc.usedIDs || []
-
-        if (!usedIDs.includes(event.senderID) && used >= max) {
-          return message.reply(
-            `😔 𝐒𝐩𝐞𝐜𝐢𝐚𝐥 𝐃𝐚𝐲 𝐅𝐮𝐥𝐥\n\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `❍ All ${max} free slots have been used up.\n` +
-            `❍ Contact admin for paid access 🫡\n`
-          )
-        }
-
-        if (usedIDs.includes(event.senderID)) {
-          return message.reply(
-            `⚠️ 𝐒𝐥𝐨𝐭 𝐀𝐥𝐫𝐞𝐚𝐝𝐲 𝐔𝐬𝐞𝐝\n\n` +
-            `━━━━━━━━━━━━━━━━━━━\n` +
-            `❍ You already used your free slot today.\n` +
-            `❍ Come back next special day! 🎉\n`
-          )
-        }
-      }
-
       if (args.length < 1) {
         return message.reply(`❓ 𝐏ʟᴇᴀꜱᴇ 𝐏ʀᴏᴠɪᴅᴇ 𝐀 𝐔ɪᴅ`)
       }
@@ -356,6 +335,60 @@ module.exports = {
           `❍ 𝐑𝐞𝐚𝐬𝐨𝐧: ${likeBanned.reason}\n` +
           `❍ 𝐁𝐚𝐧𝐧𝐞𝐝 𝐎𝐧: ${likeBanned.date}\n`
         )
+      }
+
+      if (!isAdmin() && specialDay) {
+        const used    = limitDoc.used    ?? 0
+        const max     = limitDoc.max     ?? 0
+        const usedIDs = limitDoc.usedIDs || []
+
+        if (usedIDs.includes(event.senderID)) {
+          return message.reply(
+            `You already used your free slot today.\n`
+          )
+        }
+
+        if (used >= max) {
+          return message.reply(
+            `All ${max} free slots have been used up\n\n` +
+            `Contact admin for paid access 🫡\n`
+          )
+        }
+
+        if (processingUsers.has(event.senderID)) {
+          return message.reply(
+            `𝐏𝐥𝐞𝐚𝐬𝐞 𝐖𝐚𝐢𝐭\n\n` +
+            `Your previous request is still processing.\n`
+          )
+        }
+
+        processingUsers.add(event.senderID)
+
+        const freshDoc      = await getLimitDoc(usersData)
+        const freshUsedIDs  = freshDoc.usedIDs || []
+        const freshUsed     = freshDoc.used    ?? 0
+        const freshMax      = freshDoc.max     ?? 0
+
+        if (freshUsedIDs.includes(event.senderID)) {
+          processingUsers.delete(event.senderID)
+          return message.reply(
+            `You already used your free slot today`
+          )
+        }
+
+        if (freshUsed >= freshMax) {
+          processingUsers.delete(event.senderID)
+          return message.reply(
+            `All ${freshMax} free slots have been used up\n\n` +
+            `Contact admin for paid access 🫡\n`
+          )
+        }
+
+        await setLimitDoc(usersData, {
+          ...freshDoc,
+          used   : freshUsed + 1,
+          usedIDs: [...freshUsedIDs, event.senderID]
+        })
       }
 
       const likeUsage = senderData.likeUsage || {}
@@ -398,41 +431,32 @@ module.exports = {
       }
 
       message.unsend(waiting.messageID)
+      processingUsers.delete(event.senderID)
 
       if (!xOk && !yOk) {
         return message.reply(
-          `❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
+          `𝐅𝐚𝐢𝐥𝐞𝐝 𝐓𝐨 𝐒𝐞𝐧𝐝 𝐋𝐢𝐤𝐞𝐬\n\n` +
           `❍ ${xErr}\n`
         )
       }
 
       if (!isAdmin()) {
         await usersData.set(event.senderID, {
-          likeUsage: { lastUsed: now }
+          likeUsage: { lastUsed: Date.now() }
         })
-
-        if (specialDay) {
-          const freshDoc      = await getLimitDoc(usersData)
-          const updatedUsedIDs = [...(freshDoc.usedIDs || []), event.senderID]
-          await setLimitDoc(usersData, {
-            ...freshDoc,
-            used   : (freshDoc.used ?? 0) + 1,
-            usedIDs: updatedUsedIDs
-          })
-        }
       }
 
       const nickname    = (xOk ? xData.Nickname : null) || (yOk ? yData.PlayerNickname : null) || 'Unknown'
-      const xAdded      = xOk ? (xData.likes_added       ?? 0) : 0
-      const yAdded      = yOk ? (yData.LikesGiven         ?? 0) : 0
+      const xAdded      = xOk ? (xData.likes_added      ?? 0) : 0
+      const yAdded      = yOk ? (yData.LikesGiven        ?? 0) : 0
       const totalAdded  = xAdded + yAdded
-      const beforeLikes = xOk ? (xData.likes_before      ?? 0) : (yData?.LikesBeforeProcess ?? 0)
-      const afterLikes  = yOk ? (yData.LikesAfterProcess  ?? 0) : (xData?.likes_after       ?? 0)
+      const beforeLikes = xOk ? (xData.likes_before     ?? 0) : (yData?.LikesBeforeProcess ?? 0)
+      const afterLikes  = yOk ? (yData.LikesAfterProcess ?? 0) : (xData?.likes_after       ?? 0)
 
-      const freshDoc    = await getLimitDoc(usersData)
-      const usedNow     = freshDoc.used ?? 0
-      const maxNow      = freshDoc.max  ?? 0
-      const usageTag    = specialDay && !isAdmin()
+      const finalDoc = await getLimitDoc(usersData)
+      const usedNow  = finalDoc.used ?? 0
+      const maxNow   = finalDoc.max  ?? 0
+      const usageTag = specialDay && !isAdmin()
         ? `\n𝐔𝐬𝐚𝐠𝐞𝐬 ‹ ${usedNow}/${maxNow} ›\n`
         : ''
 
@@ -447,6 +471,7 @@ module.exports = {
       )
 
     } catch (err) {
+      processingUsers.delete(event.senderID)
       const apiError = err.response?.data?.error
       return message.reply(`⚠️ ${apiError || err.message}\n`)
     }
