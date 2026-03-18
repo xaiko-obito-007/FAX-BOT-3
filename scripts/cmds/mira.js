@@ -9,12 +9,11 @@ const rasinx = {};
 
 const arshi = ["mira", "bby", "babe", "xuna", "janu", "xanu", "bot", 'বট', 'jaan', 'jan'];
 
-
 module.exports = {
   config: {
     name: "mira",
     aliases: arshi,
-    version: "3.0.0",
+    version: "3.1.0",
     author: "Tasbiul Islam Rasin",
     countDown: 1,
     role: 0,
@@ -28,10 +27,9 @@ module.exports = {
     const key = `${threadID}_${senderID}`;
 
     if (!raw) {
-      const reply0 = await axios.get(`${chatx}?message=baby`)
-      const reply = reply0.data.message
-
       try {
+        const reply0 = await axios.get(`${chatx}?message=baby`);
+        const reply = reply0.data.message;
         const userInfo = await api.getUserInfo(senderID);
         const sender = userInfo[senderID].name || "User";
 
@@ -49,8 +47,8 @@ module.exports = {
           }
         }, messageID);
       } catch (err) {
-        console.error("An error", err.message);
-        return api.sendMessage(reply, threadID, messageID);
+        console.error("Empty raw error:", err.message);
+        return api.sendMessage("❌ Something went wrong.", threadID, messageID);
       }
     }
 
@@ -63,147 +61,127 @@ module.exports = {
       }
     }
 
+    if (raw.toLowerCase() === "teachers" || raw.toLowerCase() === "teachers list") {
+      try {
+        const res = await axios.get(teacherx);
 
-if (raw.toLowerCase() === "teachers" || raw.toLowerCase() === "teachers list") {
-  try {
-    const res = await axios.get(teacherx);
-    
-    if (!res.data.teachers || res.data.teachers.length === 0) {
-      return api.sendMessage("❌ No teachers found!", threadID, messageID);
-    }
-
-
-    const mergedTeachers = {};
-    const idToNameMap = {}; 
-
-    for (const teacher of res.data.teachers) {
-      if (/^\d+$/.test(teacher.name)) {
-        try {
-          const userInfo = await api.getUserInfo(teacher.name);
-          const userName = userInfo[teacher.name]?.name;
-          if (userName) {
-            idToNameMap[teacher.name] = userName;
-          }
-        } catch (err) {
-          idToNameMap[teacher.name] = teacher.name;
+        if (!res.data.teachers || res.data.teachers.length === 0) {
+          return api.sendMessage("❌ No teachers found!", threadID, messageID);
         }
-      }
-    }
 
-    for (const teacher of res.data.teachers) {
-      let finalName = teacher.name;
-      
-      if (/^\d+$/.test(teacher.name) && idToNameMap[teacher.name]) {
-        finalName = idToNameMap[teacher.name];
-      }
+        const mergedTeachers = {};
+        const idToNameMap = {};
 
-      if (mergedTeachers[finalName]) {
-        mergedTeachers[finalName] += teacher.teaches;
-      } else {
-        mergedTeachers[finalName] = teacher.teaches;
-      }
-    }
-
-
-    const sortedTeachers = Object.entries(mergedTeachers)
-      .map(([name, teaches]) => ({ name, teaches }))
-      .sort((a, b) => b.teaches - a.teaches);
-
-    if (sortedTeachers.length === 0) {
-      return api.sendMessage("❌ No teachers found!", threadID, messageID);
-    }
-
-    let msg = `🫶🏻 𝗔𝗹𝗹 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀 𝗟𝗶𝘀𝘁\n\n`;
-    
-    sortedTeachers.forEach((teacher, index) => {
-      const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-      msg += `${medal} ${teacher.name}\n   📚 Teaches: ${teacher.teaches}\n\n`;
-    });
-    
-    msg += `\n𝗧𝗼𝘁𝗮𝗹 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀: ${sortedTeachers.length}`;
-    
-    return api.sendMessage(msg, threadID, messageID);
-  } catch (error) {
-    console.error("Teachers list error:", error.message);
-    return api.sendMessage("❌ Failed to fetch teachers list.", threadID, messageID);
-  }
-}
-
-
-if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
-  try {
-    const res = await axios.get(`${teacherx}?top=true`);
-    
-    if (!res.data.top_teachers || res.data.top_teachers.length === 0) {
-      return api.sendMessage("❌ No teachers found!", threadID, messageID);
-    }
-
-    const mergedTeachers = {};
-    const idToNameMap = {}; 
-
-
-    for (const teacher of res.data.top_teachers) {
-      if (/^\d+$/.test(teacher.name)) {
-
-        try {
-          const userInfo = await api.getUserInfo(teacher.name);
-          const userName = userInfo[teacher.name]?.name;
-          if (userName) {
-            idToNameMap[teacher.name] = userName;
+        for (const teacher of res.data.teachers) {
+          if (/^\d+$/.test(teacher.name)) {
+            try {
+              const userInfo = await api.getUserInfo(teacher.name);
+              const userName = userInfo[teacher.name]?.name;
+              if (userName) {
+                idToNameMap[teacher.name] = userName;
+              }
+            } catch (err) {
+              idToNameMap[teacher.name] = teacher.name;
+            }
           }
-        } catch (err) {
-
-          idToNameMap[teacher.name] = teacher.name;
         }
+
+        for (const teacher of res.data.teachers) {
+          let finalName = teacher.name;
+          if (/^\d+$/.test(teacher.name) && idToNameMap[teacher.name]) {
+            finalName = idToNameMap[teacher.name];
+          }
+          if (mergedTeachers[finalName]) {
+            mergedTeachers[finalName] += teacher.teaches;
+          } else {
+            mergedTeachers[finalName] = teacher.teaches;
+          }
+        }
+
+        const sortedTeachers = Object.entries(mergedTeachers)
+          .map(([name, teaches]) => ({ name, teaches }))
+          .sort((a, b) => b.teaches - a.teaches);
+
+        if (sortedTeachers.length === 0) {
+          return api.sendMessage("❌ No teachers found!", threadID, messageID);
+        }
+
+        let msg = `🫶🏻 𝗔𝗹𝗹 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀 𝗟𝗶𝘀𝘁\n\n`;
+        sortedTeachers.forEach((teacher, index) => {
+          const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+          msg += `${medal} ${teacher.name}\n   📚 Teaches: ${teacher.teaches}\n\n`;
+        });
+        msg += `\n𝗧𝗼𝘁𝗮𝗹 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀: ${sortedTeachers.length}`;
+
+        return api.sendMessage(msg, threadID, messageID);
+      } catch (error) {
+        console.error("Teachers list error:", error.message);
+        return api.sendMessage("❌ Failed to fetch teachers list.", threadID, messageID);
       }
     }
 
+    if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
+      try {
+        const res = await axios.get(`${teacherx}?top=true`);
 
-    for (const teacher of res.data.top_teachers) {
-      let finalName = teacher.name;
-      
+        if (!res.data.top_teachers || res.data.top_teachers.length === 0) {
+          return api.sendMessage("❌ No teachers found!", threadID, messageID);
+        }
 
-      if (/^\d+$/.test(teacher.name) && idToNameMap[teacher.name]) {
-        finalName = idToNameMap[teacher.name];
-      }
+        const mergedTeachers = {};
+        const idToNameMap = {};
 
+        for (const teacher of res.data.top_teachers) {
+          if (/^\d+$/.test(teacher.name)) {
+            try {
+              const userInfo = await api.getUserInfo(teacher.name);
+              const userName = userInfo[teacher.name]?.name;
+              if (userName) {
+                idToNameMap[teacher.name] = userName;
+              }
+            } catch (err) {
+              idToNameMap[teacher.name] = teacher.name;
+            }
+          }
+        }
 
-      if (mergedTeachers[finalName]) {
-        mergedTeachers[finalName] += teacher.teaches;
-      } else {
-        mergedTeachers[finalName] = teacher.teaches;
+        for (const teacher of res.data.top_teachers) {
+          let finalName = teacher.name;
+          if (/^\d+$/.test(teacher.name) && idToNameMap[teacher.name]) {
+            finalName = idToNameMap[teacher.name];
+          }
+          if (mergedTeachers[finalName]) {
+            mergedTeachers[finalName] += teacher.teaches;
+          } else {
+            mergedTeachers[finalName] = teacher.teaches;
+          }
+        }
+
+        const sortedTeachers = Object.entries(mergedTeachers)
+          .map(([name, teaches]) => ({ name, teaches }))
+          .sort((a, b) => b.teaches - a.teaches);
+
+        if (sortedTeachers.length === 0) {
+          return api.sendMessage("❌ No teachers found!", threadID, messageID);
+        }
+
+        const top10 = sortedTeachers.slice(0, 10);
+        let msg = `🏆 𝗧𝗼𝗽 𝟭𝟬 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀\n\n`;
+        top10.forEach((teacher, index) => {
+          let icon;
+          if (index === 0) icon = "🥇";
+          else if (index === 1) icon = "🥈";
+          else if (index === 2) icon = "🥉";
+          else icon = `${index + 1}.`;
+          msg += `${icon} ${teacher.name}\n   📚 ${teacher.teaches} teaches\n\n`;
+        });
+
+        return api.sendMessage(msg, threadID, messageID);
+      } catch (error) {
+        console.error("Top teachers error:", error.message);
+        return api.sendMessage("❌ Failed to fetch top teachers.", threadID, messageID);
       }
     }
-
-    const sortedTeachers = Object.entries(mergedTeachers)
-      .map(([name, teaches]) => ({ name, teaches }))
-      .sort((a, b) => b.teaches - a.teaches);
-
-    if (sortedTeachers.length === 0) {
-      return api.sendMessage("❌ No teachers found!", threadID, messageID);
-    }
-
-    const top10 = sortedTeachers.slice(0, 10);
-    let msg = `🏆 𝗧𝗼𝗽 𝟭𝟬 𝗧𝗲𝗮𝗰𝗵𝗲𝗿𝘀\n\n`;
-    
-    top10.forEach((teacher, index) => {
-      let icon;
-      if (index === 0) icon = "🥇";
-      else if (index === 1) icon = "🥈";
-      else if (index === 2) icon = "🥉";
-      else icon = `${index + 1}.`;
-      
-      msg += `${icon} ${teacher.name}\n   📚 ${teacher.teaches} teaches\n\n`;
-    });
-    
-    msg += `\n`;
-    
-    return api.sendMessage(msg, threadID, messageID);
-  } catch (error) {
-    console.error("Top teachers error:", error.message);
-    return api.sendMessage("❌ Failed to fetch top teachers.", threadID, messageID);
-  }
-}
 
     if (raw === "teach") {
       return api.sendMessage(
@@ -214,13 +192,16 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
     }
 
     if (raw.startsWith("teach ")) {
-      const [phrase, replyText] = raw.substring(6).split("=>").map(p => p.trim());
+      const parts = raw.substring(6).split("=>");
+      const phrase = parts[0] ? parts[0].trim() : "";
+      const replyText = parts[1] ? parts[1].trim() : "";
+
       if (!phrase || !replyText) {
         return api.sendMessage("Usage: arshi teach <text> => <reply1, reply2...>", threadID, messageID);
       }
 
       const replies = replyText.split(",").map(r => r.trim());
-      
+
       let senderName = "Unknown";
       try {
         const userInfo = await api.getUserInfo(senderID);
@@ -229,20 +210,19 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
         console.error("Failed to get user info:", err.message);
       }
 
-      const teachReq = `${teachx}?ask=${encodeURIComponent(phrase)}&reply=${encodeURIComponent(replies.join(","))}&sender=${encodeURIComponent(senderName)}`;
-
       try {
+        const teachReq = `${teachx}?ask=${encodeURIComponent(phrase)}&reply=${encodeURIComponent(replies.join(","))}&sender=${encodeURIComponent(senderName)}`;
         const res = await axios.get(teachReq);
+
         if (res.data.status === "error") {
-          return api.sendMessage(res.data.message || "Failed to teach.", threadID, messageID);
+          return api.sendMessage(res.data.message || "❌ Failed to teach.", threadID, messageID);
         }
 
-        if (res.data.reply === 0 && typeof res.data.ask === "string") {
-          return; 
-        }
+        const askDisplay = Array.isArray(res.data.ask) ? res.data.ask.join(", ") : res.data.ask;
+        const replyDisplay = Array.isArray(res.data.reply) ? res.data.reply.join(", ") : res.data.reply;
 
         return api.sendMessage(
-          `✅ 𝚂𝚞𝚌𝚌𝚎𝚜𝚜𝚏𝚞𝚕𝚕𝚢 𝚃𝚎𝚊𝚌𝚑\n\nNew Teach 【 ${res.data.ask} 】\nNew 𝖱eply 【 ${res.data.reply} 】\n\nTeacher: ${senderName}\n\n${rasinzrx()}`,
+          `✅ 𝚂𝚞𝚌𝚌𝚎𝚜𝚜𝚏𝚞𝚕𝚕𝚢 𝚃𝚎𝚊𝚌𝚑\n\nNew Teach 【 ${askDisplay} 】\nNew 𝖱eply 【 ${replyDisplay} 】\n\nTeacher: ${senderName}`,
           threadID,
           messageID
         );
@@ -255,9 +235,8 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
             messageID
           );
         }
-
-        console.error("Teach error:", error.message);
-        return api.sendMessage("❌ Failed to teach. Try again later.", threadID, messageID);
+        console.error("Teach error:", error.message, error.response?.status, JSON.stringify(error.response?.data));
+        return api.sendMessage(`❌ Failed to teach.\n\n${error.message}`, threadID, messageID);
       }
     }
 
@@ -300,11 +279,9 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
 
     const raw = lower.replace(new RegExp(`^(${arshi.join("|")})\\s*`, "i"), "").trim();
     if (!raw) {
-      const reply0 = await axios.get(`${chatx}?message=bby`)
-      const reply = reply0.data.message
       try {
-        const userInfo = await api.getUserInfo(senderID);
-        const sender = userInfo[senderID]?.name || "User";
+        const reply0 = await axios.get(`${chatx}?message=bby`);
+        const reply = reply0.data.message;
 
         return api.sendMessage({
           body: `${reply}`,
@@ -319,15 +296,15 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
           }
         }, messageID);
       } catch (err) {
-        console.error("error:", err.message);
-        return api.sendMessage(reply, threadID, messageID);
+        console.error("onChat empty raw error:", err.message);
       }
+      return;
     }
 
     return module.exports.onStart({ api, event, args: [raw], messageID, threadID, senderID });
   },
 
-  onReply: async function ({ api, event , message}) {
+  onReply: async function ({ api, event, message }) {
     const { threadID, senderID, messageID, body } = event;
     const msg = body?.trim();
     if (!msg) return;
@@ -362,3 +339,4 @@ if (raw.toLowerCase() === "top" || raw.toLowerCase() === "top teachers") {
     }
   }
 };
+          
