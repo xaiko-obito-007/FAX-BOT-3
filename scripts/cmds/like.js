@@ -6,7 +6,7 @@ const xms = xhours * 60 * 60 * 1000
 
 const auth_thread = "921210833794737"
 
-const x_api = (uid) => `https://dev-rasin-api.onrender.com/like?uid=${encodeURIComponent(uid)}`
+const x_api = (uid) => `https://rasin-hex-likes.vercel.app/dristybbz/likex?uid=${encodeURIComponent(uid)}`
 const y_api = (uid) => `https://noobs-api.top/dipto/ff-like?uid=${encodeURIComponent(uid)}`
 
 const NOTICE =
