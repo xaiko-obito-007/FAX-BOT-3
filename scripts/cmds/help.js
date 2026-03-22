@@ -1,131 +1,130 @@
-const fs = require("fs");
+const fs = require("fs-extra");
+const axios = require("axios");
 const path = require("path");
+const { getPrefix } = global.utils;
+const { commands, aliases } = global.GoatBot;
+const doNotDelete = "[ 𝐒 𝐀𝐘 𝐄𝐌 ]";
 
 module.exports = {
   config: {
     name: "help",
-    aliases: ["menu"],
-    version: "2.1",
-    author: "Rasin",
-    prefix: false,
+    version: "1.17",
+    author: "S AY EM",
     countDown: 5,
     role: 0,
     shortDescription: {
-      en: "Displays a list of commands or details for a specific command"
+      en: "View command usage and list all commands directly",
     },
     longDescription: {
-      en: "Provides a list of all available commands or detailed information about a specific command"
+      en: "View command usage and list all commands directly",
     },
     category: "info",
     guide: {
-      en: "help [page_number | command_name]"
-    }
+      en: "{pn} . help cmdName ",
+    },
+    priority: 1,
   },
-  onStart: async function ({ api, event, args }) {
-    const { threadID, messageID } = event;
-    const { commands, aliases } = global.GoatBot;
-    const totalCommands = commands.size;
-    
-    if (args.length > 0 && isNaN(args[0])) {
+
+  onStart: async function ({ message, args, event, threadsData, role }) {
+    const { threadID } = event;
+    const threadData = await threadsData.get(threadID);
+    const prefix = getPrefix(threadID);
+
+    const imgPath = path.join(__dirname, "cache", "help.gif");
+    const imgData = (await axios.get("https://i.ibb.co/DDbjWTwn/image0.gif", { responseType: "arraybuffer" })).data;
+    fs.writeFileSync(imgPath, Buffer.from(imgData));
+
+    if (args.length === 0) {
+      const categories = {};
+      let msg = "";
+
+      msg += ``;
+
+      for (const [name, value] of commands) {
+        if (value.config.role > 1 && role < value.config.role) continue;
+
+        const category = value.config.category || "Uncategorized";
+        categories[category] = categories[category] || { commands: [] };
+        categories[category].commands.push(name);
+      }
+
+      Object.keys(categories).forEach((category) => {
+        if (category !== "info") {
+          msg += `\n╭─────❃『  ${category.toUpperCase()}  』`;
+
+          const names = categories[category].commands.sort();
+          for (let i = 0; i < names.length; i += 3) {
+            const cmds = names.slice(i, i + 2).map((item) => `❍${item}`);
+            msg += `\n│${cmds.join(" ".repeat(Math.max(1, 5 - cmds.join("").length)))}`;
+          }
+
+          msg += `\n╰────────────✦`;
+        }
+      });
+
+      const totalCommands = commands.size;
+      msg += `\n\n╭─────❃[ 𝐄𝐧𝐣𝐨𝐲 ]\n│> 𝐓𝐨𝐭𝐚𝐥 𝐜𝐦𝐝𝐬: [${totalCommands}].\n│𝐓𝐲𝐩𝐞: [ ${prefix}𝐡𝐞𝐥𝐩 𝐭𝐨 \n│<𝐜𝐦𝐝> 𝐭𝐨 𝐥𝐞𝐚𝐫𝐧 𝐭𝐡𝐞 𝐮𝐬𝐚𝐠𝐞.]\n╰────────────✦`;
+      msg += ``;
+      msg += `\n╭─────❃\n│🌟 | [ 𝐒 𝐀𝐘 𝐄𝐌 ]\n│https://www.facebook.com/aesthetics.sayem \n╰────────────✦`;
+
+      await message.reply({
+        body: msg,
+        attachment: fs.createReadStream(imgPath)
+      });
+
+    } else {
       const commandName = args[0].toLowerCase();
       const command = commands.get(commandName) || commands.get(aliases.get(commandName));
-      
-      if (!command) {
-        return api.sendMessage(`❌ Command "${commandName}" not found.`, threadID, messageID);
-      }
-      
-      const config = command.config;
-      const guide = config.guide?.en || "No usage guide available.";
-      const description = config.longDescription?.en || config.shortDescription?.en || config.longDescription || config.shortDescription || config.description || "No description available.";
-      
-      const response =
-        "🌻✨ ⋆˚✿˖°────୨ᰔ୧────°˖✿˚⋆ 🌷🧸\n\n✦ 𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐃𝐞𝐭𝐚𝐢𝐥𝐬 ✦\n\n" +
-        `❏ 𝐍𝐚𝐦𝐞: ${config.name}\n` +
-        `❏ 𝐀𝐥𝐢𝐚𝐬𝐞𝐬: ${config.aliases?.join(", ") || "None"}\n` +
-        `❏ 𝐏𝐫𝐞𝐟𝐢𝐱 𝐑𝐞𝐪𝐮𝐢𝐫𝐞𝐝: ${config.prefix}\n` +
-        `❏ 𝐃𝐞𝐬𝐜𝐫𝐢𝐩𝐭𝐢𝐨𝐧: ${description}\n` +
-        `❏ 𝐔𝐬𝐚𝐠𝐞: ${guide}\n` +
-        `❏ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧: ${config.version || "1.0"}\n` +
-        `❏ 𝐀𝐮𝐭𝐡𝐨𝐫: ${config.author || "Unknown"}♡🧸🎀\n` +
-        `❏ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧: ${config.countDown || 0}s\n` +
-        `❏ 𝐑𝐨𝐥𝐞: ${config.role || 0}\n\n🧸🎀 ⋆˚✿˖°────୨ᰔ୧────°˖✿˚⋆ ✨🌻`
-      
-      return api.sendMessage(response, threadID, messageID);
-    }
-    
-    const categories = {};
-    for (const [name, cmd] of commands) {
-      if (!categories[cmd.config.category]) {
-        categories[cmd.config.category] = [];
-      }
-      categories[cmd.config.category].push(name);
-    }
-    
-    const categoriesArray = Object.entries(categories);
-    const itemsPerPage = 7;
-    const totalPages = Math.ceil(categoriesArray.length / itemsPerPage);
-    
-  
-    let page = args.length > 0 ? parseInt(args[0]) : 1;
-    
-  
-    if (isNaN(page) || page < 1) page = 1;
-    if (page > totalPages) page = totalPages;
-    
-  
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, categoriesArray.length);
-    const pageCategories = categoriesArray.slice(startIndex, endIndex);
-    
 
-    let responseMessage = `ᥫ᭡ 🧸🎀𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐋𝐢𝐬𝐭 🧸🎀 ᥫ᭡\n\n🎀 ˚✿˖°────୨ᰔ୧────°˖✿ 🌻\n\n❍ Pᴀɢᴇ ${page}/${totalPages}\n\n`;
-    
-    for (const [category, cmds] of pageCategories) {
-      responseMessage += `┌─❏ ${smallCaps(category)}\n`;
-      const perLine = 2;
-      for (let i = 0; i < cmds.length; i += perLine) {
-        const row = cmds.slice(i, i + perLine).map(c => `❍ ${c}`).join("   ");
-        responseMessage += `│  ${row}\n`;
-      }
-      responseMessage += "└──────────────⚬\n";
-    }
-    
-    responseMessage +=
-      "\n╭───────────────⚬\n" +
-      `│ Cᴜʀʀᴇɴᴛʟʏ, Tʜᴇ Bᴏᴛ Hᴀs [${totalCommands}] \n│ Cᴏᴍᴍᴀɴᴅs 😘🎀\n` +
-      `│ Usᴇ Hᴇʟᴘ (Cᴍᴅ) ᴛᴏ Gᴇᴛ Mᴏʀᴇ \n│ Dᴇᴛᴀɪʟs ☕\n` +
-      `│ Usᴇ Hᴇʟᴘ [Pᴀɢᴇ] Tᴏ Sᴇᴇ Oᴛʜᴇʀ \n│ Pᴀɢᴇs 🌷\n` +
-      "╰───────────────⚬\n\n🌻👀 ˚✿˖°────୨ᰔ୧────°˖✿˚ 🧸✨";
-    
-    const imagePath = path.join(__dirname, "...", "..", "rasin", "cutie.jpg");
-    
-    try {
-      if (fs.existsSync(imagePath)) {
-        return api.sendMessage({
-          body: responseMessage,
-          attachment: fs.createReadStream(imagePath)
-        }, threadID, messageID);
+      if (!command) {
+        await message.reply(`Command "${commandName}" not found.`);
       } else {
-        console.error("Image not found at:", imagePath);
-        return api.sendMessage(responseMessage, threadID, messageID);
+        const configCommand = command.config;
+        const roleText = roleTextToString(configCommand.role);
+        const author = configCommand.author || "Unknown";
+
+        const longDescription = configCommand.longDescription ? configCommand.longDescription.en || "No description" : "No description";
+        const guideBody = configCommand.guide?.en || "No guide available.";
+        const usage = guideBody.replace(/{p}/g, prefix).replace(/{n}/g, configCommand.name);
+
+        const response = `
+╭── ❖ COMMAND INFO ❖ ───────────────────
+│ Command: ${configCommand.name}
+│ Version: ${configCommand.version || "1.0"}
+│ Author: ${author}
+│ Description: ${longDescription}
+│ Role: ${roleText}
+│ Time per Command: ${configCommand.countDown || 1}s
+│ Aliases: ${configCommand.aliases ? configCommand.aliases.join(", ") : "None"}
+╰──────────────────────────────────────
+
+┏━━━ 🌟 USAGE 🌟 ━━━┛
+│ ${usage}
+┗━━━━━━━━━━━━━━━━━━
+
+✦ Please note: 
+- The content inside <XXXXX> can be modified
+- The content inside [a|b|c] means you can choose a, b, or c
+`;
+
+        await message.reply({
+          body: response,
+          attachment: fs.createReadStream(imgPath)
+        });
       }
-    } catch (error) {
-      console.error("Error loading image:", error);
-      return api.sendMessage(responseMessage, threadID, messageID);
     }
-  }
+  },
 };
 
-function smallCaps(text) {
-  const map = {
-    a: "a", b: "b", c: "c", d: "d", e: "e", f: "ꜰ", g: "g",
-    h: "h", i: "i", j: "j", k: "k", l: "l", m: "m", n: "n",
-    o: "o", p: "p", q: "q", r: "r", s: "s", t: "t", u: "u",
-    v: "v", w: "w", x: "x", y: "y", z: "z",
-    A: "a", B: "b", C: "c", D: "d", E: "e", F: "ꜰ", G: "g",
-    H: "h", I: "i", J: "j", K: "k", L: "l", M: "m", N: "n",
-    O: "o", P: "p", Q: "q", R: "r", S: "s", T: "t", U: "u",
-    V: "v", W: "w", X: "x", Y: "y", Z: "z"
-  };
-  return text.split("").map(c => map[c] || c).join("");
+function roleTextToString(roleText) {
+  switch (roleText) {
+    case 0:
+      return "0 (All users)";
+    case 1:
+      return "1 (Group administrators)";
+    case 2:
+      return "2 (Admin bot)";
+    default:
+      return "Unknown role";
+  }
 }
