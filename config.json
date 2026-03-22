@@ -11,32 +11,15 @@
   },
   "antiInbox": false,
   "language": "en",
-  "rasinAI": {
-    "apiKey": "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",
-    "model": "meta-llama/Llama-3.1-8B-Instruct"
-  },
-  "aiAssistant": {
-    "enabled": true,
-    "goatAI": [
-      "ai",
-      "assistant"
-    ],
-    "promptx": "You are GoatBot V3, an advanced AI assistant for a Facebook Messenger chatbot. Be friendly, helpful, and conversational. You can understand and respond in English"
-  },
-  "autoBio": {
-    "enabled": true,
-    "bio": "The difference between a believer and a disbeliever is Salah — 🤍✨"
-  },
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
-  "nickNameBot": "Miraaaa 🥹🎀",
-  "prefix": "!",
-  "api": "https://rasin-apis.onrender.com",
+  "nickNameBot": "┈━═☆𝐀𝐲𝐚𝐧𝐓𝐱𝐬ᚑ𝟐.𝟎☆═━┈",
+  "prefix": ".",
+  "api": "https://sayem-online-all-apixs.onrender.com/sayem",
   "approval": false,
   "reactBy": {
     "delete": [
-      "😡",
-      "😾",
-      "👋🏻"
+      "😸",
+      "😿"
     ],
     "kick": [
       "🦶",
@@ -48,33 +31,37 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "100083520680035",
-    "100081284882260"
+    "61587649917001",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
   ],
   "mainAdmin": [
-    "100083520680035"
+    "61587649917001"
   ],
-  "adminGroup": "9313321558687040",
   "whiteListMode": {
-    "enable": true,
+    "enable": false,
     "whiteListIds": [
-      "100083520680035"
+      "61587649917001",
+      ""
     ],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
   "whiteListModeThread": {
-    "enable": true,
+    "enable": false,
     "whiteListThreadIds": [
-      "9313321558687040",
-      "1360930988697683",
-      "921210833794737"
+      "24974557655524033"
     ],
     "notes": "if you enable this feature, only the thread in the whiteListThreadIds list can use the bot",
     "how_it_work": "if you enable both whiteListMode and whiteListModeThread, the system will check if the user is in whiteListIds, then check if the thread is in whiteListThreadIds, if one of the conditions is true, the user can use the bot"
   },
   "database": {
-    "type": "json",
-    "uriMongodb": "",
+    "type": "mongodb",
+    "uriMongodb": "mongodb+srv://video09:Umm143@sayem50.pqzsqng.mongodb.net/mydbname?retryWrites=true&w=majority",
     "autoSyncWhenStart": false,
     "autoRefreshThreadInfoFirstTime": true,
     "notes": "(1) type selects 'json' or 'sqlite' or 'mongodb'. If you choose mongodb, enter uri connect mongodb in the uriMongodb section, instructions to get uri connect mongodb at: https://youtu.be/z1f9urHW5xY. I recommend using 'mongodb' or 'sqlite', json is not recommended because it is not stable. (2) when you set autoSyncWhenStart to true, the bot will automatically synchronize the data in the database when starting the bot, this will make the bot start slower. (3) when you set autoRefreshThreadInfoFirstTime to true, the bot will automatically refresh the thread information when get first message from the thread since starting the bot"
