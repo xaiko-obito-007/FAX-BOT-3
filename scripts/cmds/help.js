@@ -65,7 +65,7 @@ module.exports = {
       const totalCommands = commands.size;
       msg += `\n\n╭─────❃[ 𝐄𝐧𝐣𝐨𝐲 ]\n│> 𝐓𝐨𝐭𝐚𝐥 𝐜𝐦𝐝𝐬: [${totalCommands}].\n│𝐓𝐲𝐩𝐞: [ ${prefix}𝐡𝐞𝐥𝐩 𝐭𝐨 \n│<𝐜𝐦𝐝> 𝐭𝐨 𝐥𝐞𝐚𝐫𝐧 𝐭𝐡𝐞 𝐮𝐬𝐚𝐠𝐞.]\n╰────────────✦`;
       msg += ``;
-      msg += `\n╭─────❃\n│🌟 | [ 𝐒 𝐀𝐘 𝐄𝐌 ]\n│https://www.facebook.com/aesthetics.sayem \n╰────────────✦`;
+      msg += `\n╭─────❃\n│🌟 | [ 𝐒 𝐀𝐘 𝐄𝐌 ]\n│https://m.me/aesthetics.sayem \n╰────────────✦`;
 
       await message.reply({
         body: msg,
