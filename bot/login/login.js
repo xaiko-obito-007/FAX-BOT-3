@@ -119,7 +119,7 @@ centerText(taglineStyled, tagline.length);
 
 console.log('');
 
-const author = "✨ Crafted with ♡ by Rasin ✨";
+const author = "✨ Crafted with ♡ by Rasin And Fca By Ariyan ✨";
 const authorStyled = gradient("#FF69B4", "#BA55D3")(author);
 centerText(authorStyled, author.length);
 
