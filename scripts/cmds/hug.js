@@ -1,141 +1,100 @@
-const fs = require("fs-extra");
+const fs = require("fs");
+const path = require("path");
 const axios = require("axios");
-const { createCanvas, loadImage } = require("canvas");
+const { loadImage, createCanvas } = require("canvas");
 
 module.exports = {
   config: {
     name: "hug",
-    version: "1.2.0",
-    author: "Rasin",
+    aliases: ["hug"],
+    version: "1.1",
+    author: "Amit Max ⚡",
     countDown: 5,
     role: 0,
-    longDescription: "{p}hug @mention someone you want to hug that person 🫂",
+    shortDescription: "Give someone a hug!",
+    longDescription: "A fun command to give someone a hug with a picture.",
     category: "fun",
-    guide: {
-      en: "{pn} @mention - Hug mentioned user"
-        + "\n{pn} <name> - Search and hug user by name"
-        + "\n{pn} <uid> - Hug user by ID"
-        + "\n{pn} [reply] - Hug replied user"
-    },
-    prefix: true,
-    notes: "If you change the author then the command will not work and not usable"
+    guide: "{pn} @mention or reply",
   },
 
-  langs: {
-    en: {
-      noTarget: "Please mention, reply, or enter a name of someone to hug",
-      notFound: "User '%1' not found in this conversation",
-      multiple: "Multiple users found with name '%1':\n%2\n\nPlease use their UID or be more specific.",
-      error: "⚠️ An error occurred, try again later.",
-      authError: "⚠️ Command author mismatch. Please restore original author name to use this command.",
-      message: "🌻✨ ⋆˚✿˖°────୨ᰔ୧────°˖✿˚⋆ 🌷🧸\n\n𝐀 𝐰𝐚𝐫𝐦 𝐡𝐮𝐠\n\n🧸🎀 ⋆˚✿˖°────୨ᰔ୧────°˖✿˚⋆ ✨🌻"
-    }
-  },
+  onStart: async function ({ event, api, usersData }) {
+      const senderData = await usersData.get(event.senderID);
 
-  onStart: async function ({ api, message, event, usersData, args, getLang }) {
-    const config = module.exports.config;
-    const eAuth = "UmFzaW4=";
-    const dAuth = Buffer.from(eAuth, "base64").toString("utf8");
-    if (config.author !== dAuth) {
-      return message.reply(getLang("authError"));
-    }
+if (!senderData || senderData.money < 500) {
+  return api.sendMessage(
+    "Oy Goribs Cmd use er jonno 500tk lagbe 😾",
+    event.threadID,
+    event.messageID
+  );
+}
 
-    let one = event.senderID, two;
-    const mention = Object.keys(event.mentions || {});
+// Deduct 500 money
+await usersData.set(event.senderID, {
+  money: senderData.money - 500
+});
+    let mention = Object.keys(event.mentions)[0];
+    let targetID = mention || event.messageReply?.senderID;
+
+    if (!targetID)
+      return api.sendMessage("Who would you like to hug? Please tag someone or reply to a message!", event.threadID, event.messageID);
+
+    const huggerID = event.senderID;
+
+    const getAvatar = async (uid) => {
+      try {
+        const url = `https://graph.facebook.com/${uid}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+        const avatarPath = path.join(__dirname, `${uid}_avatar.png`);
+        const res = await axios.get(url, { responseType: "arraybuffer" });
+        fs.writeFileSync(avatarPath, res.data);
+        return avatarPath;
+      } catch (err) {
+        console.error(`Error fetching avatar for user ${uid}: ${err.message}`);
+        return "";
+      }
+    };
+
+    const bg = await loadImage("https://i.imgur.com/eUNHCj3.jpeg");
+    const canvas = createCanvas(bg.width, bg.height);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bg, 0, 0);
+
+    const huggerAvatarPath = await getAvatar(huggerID);
+    const targetAvatarPath = await getAvatar(targetID);
+
+    const huggerAvatar = await loadImage(huggerAvatarPath);
+    const targetAvatar = await loadImage(targetAvatarPath);
+
     
-    if (mention.length > 0) {
-      two = mention[0];
-    }
-    else if (event.type === "message_reply") {
-      two = event.messageReply.senderID;
-    }
-    else if (args[0] && /^\d+$/.test(args[0])) {
-      two = args[0];
-    }
-    else if (args[0]) {
-      const query = args.join(" ");
-      const matches = await findUserByName(api, usersData, event.threadID, query);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(285, 110, 50, 0, Math.PI * 2);  
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(huggerAvatar, 235, 60, 100, 100);  
+    ctx.restore();
 
-      if (matches.length === 0) {
-        return message.reply(getLang("notFound", query.replace(/@/g, "")));
-      }
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(460, 160, 50, 0, Math.PI * 2);  
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(targetAvatar, 410, 110, 100, 100);  
 
-      if (matches.length > 1) {
-        const matchList = matches.map(m => `• ${m.name}: ${m.uid}`).join('\n');
-        return message.reply(getLang("multiple", query.replace(/@/g, ""), matchList));
-      }
+    const output = path.join(__dirname, "hug_output.png");
+    fs.writeFileSync(output, canvas.toBuffer("image/png"));
 
-      two = matches[0].uid;
-    }
-    else {
-      return message.reply(getLang("noTarget"));
-    }
+    const senderName = await usersData.getName(huggerID);
+    const targetName = event.mentions[mention] || (event.messageReply?.senderName || "Friend");
 
-    try {
-      const avatarURL1 = `https://arshi-facebook-pp.vercel.app/api/pp?uid=${one}`;
-      const avatarURL2 = `https://arshi-facebook-pp.vercel.app/api/pp?uid=${two}`;
-
-      const canvas = createCanvas(800, 750);
-      const ctx = canvas.getContext("2d");
-
-      const background = await loadImage("https://files.catbox.moe/qxovn9.jpg");
-      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-      const avatar1 = await loadImage(avatarURL1);
-      const avatar2 = await loadImage(avatarURL2);
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(610, 340, 85, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(avatar1, 525, 255, 170, 170);
-      ctx.restore();
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(230, 350, 85, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(avatar2, 145, 265, 170, 170);
-      ctx.restore();
-
-      const outputPath = `${__dirname}/tmp/hug_image.png`;
-      const buffer = canvas.toBuffer("image/png");
-      fs.writeFileSync(outputPath, buffer);
-
-      message.reply(
-        {
-          body: getLang("message"),
-          attachment: fs.createReadStream(outputPath)
-        },
-        () => fs.unlinkSync(outputPath)
-      );
-    } catch (error) {
-      console.error(error.message);
-      api.sendMessage(getLang("error"), event.threadID);
-    }
+    api.sendMessage({
+      body: `😍 I've just hugged ${targetName}! \n${senderName} is giving a warm hug to ${targetName}!`,
+      attachment: fs.createReadStream(output),
+      mentions: [{ tag: targetName, id: targetID }],
+}, event.threadID, () => {
+      fs.unlinkSync(output);
+      fs.unlinkSync(huggerAvatarPath);
+      fs.unlinkSync(targetAvatarPath);
+    }, event.messageID);
   }
 };
-
-async function findUserByName(api, usersData, threadID, query) {
-  try {
-    const cleanQuery = query.replace(/@/g, "").trim().toLowerCase();
-    const threadInfo = await api.getThreadInfo(threadID);
-    const ids = threadInfo.participantIDs || [];
-    const matches = [];
-
-    for (const uid of ids) {
-      try {
-        const name = (await usersData.getName(uid)).toLowerCase();
-        if (name.includes(cleanQuery)) {
-          matches.push({ uid, name: await usersData.getName(uid) });
-        }
-      } catch {}
-    }
-
-    return matches;
-  } catch {
-    return [];
-  }
-}

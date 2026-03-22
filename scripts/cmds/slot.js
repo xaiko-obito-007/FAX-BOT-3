@@ -1,131 +1,223 @@
-
 module.exports = {
   config: {
-    name: "slots",
-    aliases: ["slot", "slt", "sl", "spin"],
-    version: "1.3",
-    author: "Rasin",
-    prefix: false,
-    countDown: 3,
+    name: "slot",
+    version: "3.4",
+    author: "S AY EM",
     role: 0,
-    description: "Slot Game",
+    shortDescription: "Slot Machine",
     category: "game",
-    guide: {
-      en: "Use: {pn}slot <amount>"
-    }
+    guide: "-slot <amount>"
   },
 
-  onStart: async function ({ message, event, args, usersData }) {
-    const { senderID } = event;
-    const bet = parseInt(args[0]);
+  onStart: async function ({ api, event, args, usersData }) {
 
-    // Money format function
-    const formatMoney = (amount) => {
-      if (isNaN(amount)) return "🥹 0";
-      amount = Number(amount);
+    const { threadID, messageID, senderID } = event;
 
-      const scales = [
-        { value: 1e15, suffix: 'Q', color: '' },
-        { value: 1e12, suffix: 'T', color: '' },
-        { value: 1e9, suffix: 'B', color: '' },
-        { value: 1e6, suffix: 'M', color: '' },
-        { value: 1e3, suffix: 'k', color: '' }
-      ];
+    if (!args[0])
+      return api.sendMessage("❌ | Enter bet amount.", threadID, messageID);
 
-      const scale = scales.find(s => amount >= s.value);
-      if (scale) {
-        const scaledValue = amount / scale.value;
-        return `${scale.color}${scaledValue.toFixed(2)}${scale.suffix}`;
+    const bet = parseBet(args[0]);
+
+    const minBet = 500;
+    const maxBet = 300000000;
+
+    if (bet < minBet)
+      return api.sendMessage("❌ | Minimum bet is 10.", threadID, messageID);
+
+    if (bet > maxBet)
+      return api.sendMessage("❌ | Maximum bet is 300M.", threadID, messageID);
+
+    const userData = await usersData.get(senderID);
+
+    let balance = userData.money || 0;
+    const oldBalance = balance;
+
+    let spins = userData.spins || 0;
+    let cooldown = userData.slotCooldown || 0;
+
+    const maxSpins = 30;
+    const cooldownTime = 30 * 60 * 1000;
+    const now = Date.now();
+
+    if (cooldown > now) {
+      const left = Math.ceil((cooldown - now) / 60000);
+      return api.sendMessage(`⏳ | You used 30 spins.\nCome back after ${left} minutes.`, threadID, messageID);
+    }
+
+    if (spins >= maxSpins) {
+      await usersData.set(senderID, {
+        spins: 0,
+        slotCooldown: now + cooldownTime
+      });
+      return api.sendMessage("⏳ | You reached 30 spins. Wait 30 minutes.", threadID, messageID);
+    }
+
+    if (balance < bet)
+      return api.sendMessage("❌ | Not enough balance.", threadID, messageID);
+
+    const icons = ["🍒","🍓","🍇","🍎","🍉","❤️","🦆"];
+
+    let slots = [];
+    let maxMatch = 0;
+
+    const chance = Math.random();
+
+    if (chance < 0.07) {
+      const icon = icons[Math.floor(Math.random()*icons.length)];
+      slots = [icon,icon,icon,icon,icon];
+      maxMatch = 5;
+    }
+
+    else if (chance < 0.25) {
+      const icon = icons[Math.floor(Math.random()*icons.length)];
+      slots = [icon,icon,icon,icon,icons[Math.floor(Math.random()*icons.length)]];
+      maxMatch = 4;
+    }
+
+    else if (chance < 0.55) {
+      const icon = icons[Math.floor(Math.random()*icons.length)];
+      slots = [icon,icon,icon,icons[Math.floor(Math.random()*icons.length)],icons[Math.floor(Math.random()*icons.length)]];
+      maxMatch = 3;
+    }
+
+    else {
+      for (let i=0;i<5;i++){
+        slots.push(icons[Math.floor(Math.random()*icons.length)]);
       }
-      return `😺 ${amount.toLocaleString()}`;
-    };
-
-    // Invalid bet check
-    if (isNaN(bet) || bet <= 0) {
-      return message.reply("Pleaꜱe Enter A Valid Bet Amount");
+      const count = {};
+      slots.forEach(i => count[i] = (count[i] || 0) + 1);
+      maxMatch = Math.max(...Object.values(count));
     }
 
-    const user = await usersData.get(senderID);
+    let reward = 0;
+    let result;
+    let amountText;
+    let tipText;
 
-    // Not enough balance
-    if (user.money < bet) {
-      return message.reply(`You Need ${formatMoney(bet - user.money)} More To Play`);
+    if (maxMatch === 5) {
+      reward = bet * 5;
+      result = "🔥 JACKPOT WIN 🔥";
+      tipText = "Legendary spin!";
     }
 
-    // Slot symbols with weight
-    const symbols = [
-      { emoji: "🍒", weight: 30 },
-      { emoji: "🍋", weight: 25 },
-      { emoji: "🍇", weight: 20 },
-      { emoji: "🍉", weight: 15 },
-      { emoji: "⭐", weight: 7 },
-      { emoji: "7️⃣", weight: 3 }
-    ];
+    else if (maxMatch === 4) {
+      reward = bet * 3;
+      result = "🎉 BIG WIN 🎉";
+      tipText = "Great! 4 matched!";
+    }
 
-    // Roll function
-    const roll = () => {
-      const totalWeight = symbols.reduce((sum, symbol) => sum + symbol.weight, 0);
-      let random = Math.random() * totalWeight;
+    else if (maxMatch === 3) {
+      reward = bet * 2;
+      result = "✅ WIN";
+      tipText = "Nice spin!";
+    }
 
-      for (const symbol of symbols) {
-        if (random < symbol.weight) return symbol.emoji;
-        random -= symbol.weight;
+    else {
+      reward = -bet;
+      result = "❌ LOSE";
+      tipText = "Better luck next time!";
+    }
+
+    const newBalance = balance + reward;
+
+    spins++;
+    const left = maxSpins - spins;
+
+    function randomSpin() {
+      let arr = [];
+      for (let i = 0; i < 5; i++) {
+        arr.push(icons[Math.floor(Math.random()*icons.length)]);
       }
-      return symbols[0].emoji;
-    };
-
-    const slot1 = roll();
-    const slot2 = roll();
-    const slot3 = roll();
-
-    let winnings = 0;
-    let outcome;
-    let winType = "";
-    let bonus = "";
-
-    // Jackpot cases
-    if (slot1 === "7️⃣" && slot2 === "7️⃣" && slot3 === "7️⃣") {
-      winnings = bet * 10;
-      outcome = "🙀 Mega Jackpot! Triple 7️⃣!";
-      winType = "🤞 Max Win";
-      bonus = "🤠 Bonuꜱ: +3% To Your Total Balance!";
-      await usersData.set(senderID, { money: user.money * 1.03 });
-    } else if (slot1 === slot2 && slot2 === slot3) {
-      winnings = bet * 5;
-      outcome = "😘 Jackpot!\n3 Matching Symbolꜱ!";
-      winType = "🎉 Big Win";
-    } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
-      winnings = bet * 2;
-      outcome = "😻 Nice!\n2 Matching Symbolꜱ!";
-      winType = "🥳 Win";
-    } else if (Math.random() < 0.5) {
-      winnings = bet * 1.5;
-      outcome = "😱 Lucky Spin Bonuꜱ Win!";
-      winType = "😐 Small Win";
-    } else {
-      winnings = -bet;
-      outcome = "😌 Don't Worry! Better Luck Next Time!";
-      winType = "😫 Loꜱꜱ";
+      return arr.join(" ┃ ");
     }
 
-    await usersData.set(senderID, { money: user.money + winnings });
-    const finalBalance = user.money + winnings;
+    const spinMsg = `
+╔════════════════════╗
+       🎰 SLOT MACHINE
+╚════════════════════╝
 
-    const slotBox = `【 Slot Game 】\n《 ${slot1} | ${slot2} | ${slot3} 》`;
-    const resultColor = winnings >= 0 ? "😻" : "🥹";
-    const resultText = winnings >= 0
-      ? `😍 Win: ${formatMoney(winnings)}`
-      : `😫 Loꜱt: ${formatMoney(bet)}`;
+❰ ${randomSpin()} ❱
 
-    const messageContent =
-`${slotBox}
+━━━━━━━━━━━━━━━━━━
+🎯 RESULT: 🎲 Spinning...
 
-😀 Reꜱult: ${outcome}
-${winType ? `${winType}\n` : ""}${bonus ? `${bonus}\n` : ""}
-${resultColor} ${resultText}
-👀 Balance: ${formatMoney(finalBalance)}`;
+💰 BALANCE: $${formatMoney(oldBalance)}
 
-    return message.reply(messageContent);
+🎲 Spins: ${spins}/30 | ${left} left
+━━━━━━━━━━━━━━━━━━
+`;
+
+    api.sendMessage(spinMsg, threadID, (err, info) => {
+
+      const id = info.messageID;
+
+      let frame = 0;
+
+      const spin = () => {
+
+        frame++;
+
+        if (frame >= 5) {
+
+          balance = newBalance;
+
+          usersData.set(senderID, {
+            money: balance,
+            spins: spins,
+            slotCooldown: cooldown
+          });
+
+          amountText = reward > 0
+            ? `🟢 WON: $${formatMoney(reward)}`
+            : `🔴 LOST: $${formatMoney(Math.abs(reward))}`;
+
+          const finalMsg = `
+╔════════════════════╗
+       🎰 SLOT MACHINE
+╚════════════════════╝
+
+❰ ${slots.join(" ┃ ")} ❱
+
+━━━━━━━━━━━━━━━━━━
+🎯 RESULT: ${result}
+
+${amountText}
+💰 BALANCE: $${formatMoney(balance)}
+
+💡 ${tipText}
+🎲 Spins: ${spins}/30 | ${left} left
+━━━━━━━━━━━━━━━━━━
+`;
+
+          return api.editMessage(finalMsg, id);
+        }
+
+        const frameMsg = spinMsg.replace(/❰.*❱/, `❰ ${randomSpin()} ❱`);
+
+        api.editMessage(frameMsg, id);
+
+        setTimeout(spin, 700);
+      };
+
+      setTimeout(spin, 700);
+
+    }, messageID);
+
   }
 };
 
+function parseBet(input){
+  input = input.toLowerCase();
+  if (input.endsWith("k")) return parseFloat(input)*1000;
+  if (input.endsWith("m")) return parseFloat(input)*1000000;
+  if (input.endsWith("b")) return parseFloat(input)*1000000000;
+  return parseInt(input);
+}
+
+function formatMoney(num){
+  if (num >= 1000000000000) return (num/1000000000000).toFixed(2)+"T";
+  if (num >= 1000000000) return (num/1000000000).toFixed(2)+"B";
+  if (num >= 1000000) return (num/1000000).toFixed(2)+"M";
+  if (num >= 1000) return (num/1000).toFixed(2)+"K";
+  return num;
+}
