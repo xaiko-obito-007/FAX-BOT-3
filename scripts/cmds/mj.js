@@ -1,133 +1,63 @@
 const axios = require("axios");
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path");
-const sharp = require("sharp");
 
 module.exports = {
   config: {
     name: "mj",
-    version: "3.3",
-    role: 2,
-    author: "S AY EM",
-    countDown: 60,
-    category: "ai"
+    version: "1.0",
+    author: "Sayem",
+    countDown: 20,
+    role: 0,
+    shortDescription: "Generate AI images (MidJourney Style)",
+    longDescription: "Generate 4 AI images using MidJourney API",
+    category: "ai",
+    guide: "{pn} <prompt>"
   },
 
-  onStart: async function ({ api, event, args, message }) {
-
-    if (!args.length) return message.reply("Give me a prompt.");
-
-    api.setMessageReaction("⏳", event.messageID, () => {}, true);
-
+  onStart: async function ({ message, args, event }) {
     try {
+      const prompt = args.join(" ");
 
-      const prompt = encodeURIComponent(args.join(" "));
+      if (!prompt) {
+        return message.reply("❌ Please provide a prompt.\nExample:\nmidjanuary anime boy with sword");
+      }
 
-      const res = await axios.get(
-        `https://sayem-online-all-apixs.vercel.app/api/api/ai/midjourney3?p=${prompt}`
-      );
+      const waitMsg = await message.reply("⏳ Generating your images...");
 
-      if (!res.data.status || !Array.isArray(res.data.result))
-        return message.reply("Generation failed.");
+      const apiUrl = `https://sayem-online-project.vercel.app/api/ai/midjourney?prompt=${encodeURIComponent(prompt)}`;
 
-      const urls = res.data.result.slice(0, 4);
+      const res = await axios.get(apiUrl);
 
-      const buffers = await Promise.all(
-        urls.map(u =>
-          axios.get(u, { responseType: "arraybuffer" }).then(r => r.data)
-        )
-      );
+      if (!res.data || !res.data.images) {
+        return message.reply("❌ Failed to generate images!");
+      }
 
-      const meta = await sharp(buffers[0]).metadata();
-      const w = meta.width;
-      const h = meta.height;
+      const images = res.data.images;
 
-      const grid = await sharp({
-        create: {
-          width: w * 2,
-          height: h * 2,
-          channels: 4,
-          background: { r: 0, g: 0, b: 0, alpha: 0 }
-        }
-      })
-      .composite([
-        { input: buffers[0], left: 0, top: 0 },
-        { input: buffers[1], left: w, top: 0 },
-        { input: buffers[2], left: 0, top: h },
-        { input: buffers[3], left: w, top: h }
-      ])
-      .png()
-      .toBuffer();
+      let imgPaths = [];
 
-      const file = path.join(__dirname, `mj_${event.senderID}.png`);
-      fs.writeFileSync(file, grid);
+      for (let i = 0; i < images.length && i < 4; i++) {
+        const imgUrl = images[i];
+        const imgPath = path.join(__dirname, `cache_midjanuary_${i}.jpg`);
 
-      api.sendMessage(
-        {
-          body: "✨ MidJourney Result\nReply with U1 | U2 | U3 | U4",
-          attachment: fs.createReadStream(file)
-        },
-        event.threadID,
-        (err, info) => {
+        const imgRes = await axios.get(imgUrl, { responseType: "arraybuffer" });
 
-          fs.unlinkSync(file);
-          if (err) return;
+        fs.writeFileSync(imgPath, Buffer.from(imgRes.data));
+        imgPaths.push(imgPath);
+      }
 
-          api.setMessageReaction("✅", event.messageID, () => {}, true);
+      await message.reply({
+        body: `✅ Generated Images for:\n"${prompt}"`,
+        attachment: imgPaths.map(p => fs.createReadStream(p))
+      });
 
-          global.GoatBot.onReply.set(info.messageID, {
-            commandName: "mj",
-            author: event.senderID,
-            urls
-          });
+      // Cleanup
+      imgPaths.forEach(p => fs.unlinkSync(p));
 
-        },
-        event.messageID
-      );
-
-    } catch (e) {
-
-      console.log("MJ ERROR:", e?.response?.data || e.message);
-      message.reply("Error generating image.");
-
-    }
-  },
-
-  onReply: async function ({ api, event, Reply, message }) {
-
-    if (event.senderID !== Reply.author) return;
-
-    const map = { U1: 0, U2: 1, U3: 2, U4: 3 };
-    const input = event.body.trim().toUpperCase();
-
-    if (!(input in map))
-      return message.reply("Reply with U1, U2, U3, or U4.");
-
-    try {
-
-      const img = await axios.get(
-        Reply.urls[map[input]],
-        { responseType: "arraybuffer" }
-      );
-
-      const file = path.join(__dirname, `mj_${input}_${event.senderID}.png`);
-      fs.writeFileSync(file, img.data);
-
-      api.sendMessage(
-        {
-          body: `✨ ${input}`,
-          attachment: fs.createReadStream(file)
-        },
-        event.threadID,
-        () => fs.unlinkSync(file),
-        event.messageID
-      );
-
-    } catch (e) {
-
-      console.log("MJ ERROR:", e?.response?.data || e.message);
-      message.reply("Failed.");
-
+    } catch (error) {
+      console.error(error);
+      message.reply("❌ Error while generating images!");
     }
   }
 };

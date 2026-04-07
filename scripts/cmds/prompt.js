@@ -1,50 +1,32 @@
 const axios = require('axios');
-
-module.exports = {
-  config: {
-    name: "p",
-    aliases: ["prompt"],
-    version: "1.3",
-    author: "Rasin",
+const baseApiUrl = async () => {
+  const base = await axios.get(
+    `https://raw.githubusercontent.com/Blankid018/D1PT0/main/baseApiUrl.json`,
+  );
+  return base.data.api;
+};
+module.exports.config ={
+    name: "prompt",
+    version: "6.9",
+    author: "dipto",
     countDown: 5,
     role: 0,
-    longDescription: {
-      vi: "",
-      en: "Get prompts"
-    },
-    category: "image"
+    category: "media",
+    description: " image to prompt",
+    category: "tools",
+    usages: "reply [image]"
   },
-  onStart: async function ({ message, event, args }) {
-    try {
-      const promptText = args.join(" ").trim();
-      let imageUrl;
-      let response;
 
-      if (event.type === "message_reply") {
-        const attach = event.messageReply.attachments?.[0];
-        if (attach && ["photo", "sticker"].includes(attach.type)) {
-          imageUrl = attach.url;
-        } else {
-          return message.reply("Reply must be an image");
-        }
-      } 
-      else if (args[0]?.match(/https?:\/\/.*\.(?:png|jpg|jpeg|webp)/i)) {
-        imageUrl = args[0];
-      } 
-      else if (!promptText) {
-        return message.reply("Reply to an image");
-      }
-
-      if (imageUrl) {
-        response = await axios.get(`https://arshi-prompt-api.vercel.app/api/prompt?url=${encodeURIComponent(imageUrl)}`);
-        const description = response.data.prompt;
-        return message.reply(description);
-      }
-
-    
-    } catch (error) {
-      console.error(error.response?.data || error.message);
-      message.reply(`❌ | An error occurred: ${error.message}`);
+module.exports.onStart = async ({ api, event,args }) =>{
+    const dip = event.messageReply?.attachments[0]?.url || args.join(' ');
+    if (!dip) {
+      return api.sendMessage('Please reply to an image.', event.threadID, event.messageID);
     }
-  }
-};
+    try {
+      const prom = (await axios.get(`${await baseApiUrl()}/prompt?url=${encodeURIComponent(dip)}`)).data.prompt;
+         api.sendMessage(prom, event.threadID, event.messageID);
+    } catch (error) {
+      console.error(error);
+      return api.sendMessage('Failed to convert image into text.', event.threadID, event.messageID);
+    }
+  };

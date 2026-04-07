@@ -1,139 +1,94 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const { config } = global.GoatBot;
 
 const baseApiUrl = async () => {
-  const base = await axios.get(
-    "https://raw.githubusercontent.com/mahmudx7/exe/main/baseApiUrl.json"
-  );
-  return base.data.mahmud;
+        const base = await axios.get("https://raw.githubusercontent.com/mahmudx7/HINATA/main/baseApiUrl.json");
+        return base.data.mahmud;
 };
 
 module.exports = {
-  config: {
-    name: "murgi",
-    version: "1.8",
-    author: "Rasin",
-    role: 0,
-    category: "fun",
-    cooldown: 10,
-    guide: {
-      en: "{pn} @mention or reply to a message"
-        + "\n{pn} <name>: search user by name"
-        + "\n{pn} <uid>: use specific user ID"
-    }
-  },
+        config: {
+                name: "murgi",
+                aliases: ["chicken", "মুরগি"],
+                version: "1.7",
+                author: "MahMUD",
+                countDown: 10,
+                role: 0,
+                description: {
+                        bn: "কাউকে মুরগি বানিয়ে মজার ছবি তৈরি করুন",
+                        en: "Create a funny murgi (hen) image of someone",
+                        vi: "Tạo một bức ảnh gà vui nhộn về ai đó"
+                },
+                category: "fun",
+                guide: {
+                        bn: '   {pn} <@tag/reply/UID>: কাউকে মুরগি বানাতে ট্যাগ করুন',
+                        en: '   {pn} <@tag/reply/UID>: Tag/Reply to make someone murgi',
+                        vi: '   {pn} <@tag/reply/UID>: Gắn thẻ để biến ai đó thành gà'
+                }
+        },
 
-  langs: {
-    en: {
-      noTarget: "❌ Mention, reply, give UID, or enter a name to make murgi someone",
-      notFound: "User '%1' not found in this conversation",
-      multiple: "Multiple users found with name '%1':\n%2\n\nPlease use their UID or be more specific.",
-      adminProtected: "Lol amar boss re Target koros ken?😒",
-      processing: "Here's your murgi image 🐸",
-      error: "🥹error, contact Rasin."
-    }
-  },
+        langs: {
+                bn: {
+                        noTarget: "× বেবি, কাউকে মেনশন দাও, রিপ্লাই করো অথবা UID দাও! 🐓",
+                        success: "এই নাও তোমার মুরগি ছবি বেবি! 🐸",
+                        error: "× সমস্যা হয়েছে: %1। প্রয়োজনে Contact MahMUD।"
+                },
+                en: {
+                        noTarget: "× Baby, mention, reply, or provide UID of the target! 🐓",
+                        success: "Here's your murgi image baby! 🐸",
+                        error: "× API error: %1. Contact MahMUD for help."
+                },
+                vi: {
+                        noTarget: "× Cưng ơi, hãy gắn thẻ, phản hồi hoặc cung cấp UID! 🐓",
+                        success: "Ảnh con gà của cưng đây! 🐸",
+                        error: "× Lỗi: %1. Liên hệ MahMUD để hỗ trợ."
+                }
+        },
 
-  onStart: async function({ api, event, args, getLang, usersData }) {
-    const obfuscatedAuthor = String.fromCharCode(82, 97, 115, 105, 110); 
-    if (module.exports.config.author !== obfuscatedAuthor) {
-      return api.sendMessage(
-        "You are not authorized to change the author name.\n", 
-        event.threadID, 
-        event.messageID
-      );
-    }
+        onStart: async function ({ api, event, args, message, getLang }) {
+                const authorName = String.fromCharCode(77, 97, 104, 77, 85, 68);
+                if (this.config.author !== authorName) {
+                        return api.sendMessage("You are not authorized to change the author name.", event.threadID, event.messageID);
+                }
 
-    const { senderID, mentions, threadID, messageID, messageReply } = event;
-    let id;
+                const { mentions, messageReply } = event;
+                let id;
 
-    if (Object.keys(mentions).length > 0) {
-      id = Object.keys(mentions)[0];
-    } 
-    else if (messageReply) {
-      id = messageReply.senderID;
-    } 
-    else if (args[0] && /^\d+$/.test(args[0])) {
-      id = args[0]; 
-    } 
-    else if (args[0]) {
-      const query = args.join(" ");
-      const matches = await findUserByName(api, usersData, event.threadID, query);
+                if (Object.keys(mentions).length > 0) {
+                        id = Object.keys(mentions)[0];
+                } else if (messageReply) {
+                        id = messageReply.senderID;
+                } else if (args[0] && !isNaN(args[0])) {
+                        id = args[0];
+                }
 
-      if (matches.length === 0) {
-        return api.sendMessage(
-          getLang("notFound", query.replace(/@/g, "")),
-          threadID,
-          messageID
-        );
-      }
+                if (!id) return message.reply(getLang("noTarget"));
 
-      if (matches.length > 1) {
-        const matchList = matches.map(m => `• ${m.name}: ${m.uid}`).join('\n');
-        return api.sendMessage(
-          getLang("multiple", query.replace(/@/g, ""), matchList),
-          threadID,
-          messageID
-        );
-      }
+                const cacheDir = path.join(__dirname, "cache");
+                if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+                const filePath = path.join(cacheDir, `murgi_${id}.png`);
 
-      id = matches[0].uid;
-    } 
-    else {
-      return api.sendMessage(
-        getLang("noTarget"),
-        threadID,
-        messageID
-      );
-    }
+                try {
+                        api.setMessageReaction("🐓", event.messageID, () => {}, true);
+                        
+                        const baseUrl = await baseApiUrl();
+                        const url = `${baseUrl}/api/murgi?user=${id}`;
 
-    if (config.adminBot.includes(id)) {
-      return api.sendMessage(
-        getLang("adminProtected"),
-        threadID,
-        messageID
-      );
-    }
-    
-    try {
-      const apiUrl = await baseApiUrl();
-      const url = `${apiUrl}/api/murgi?user=${id}`;
-      const response = await axios.get(url, { responseType: "arraybuffer" });
-      const filePath = path.join(__dirname, `murgi_${id}.png`);
-      fs.writeFileSync(filePath, response.data);
-      
-      api.sendMessage(
-        { attachment: fs.createReadStream(filePath), body: getLang("processing") },
-        threadID,
-        () => fs.unlinkSync(filePath),
-        messageID
-      );
-    } catch (err) {
-      api.sendMessage(getLang("error"), threadID, messageID);
-    }
-  }
-};
+                        const response = await axios.get(url, { responseType: "arraybuffer" });
+                        fs.writeFileSync(filePath, Buffer.from(response.data));
 
-async function findUserByName(api, usersData, threadID, query) {
-  try {
-    const cleanQuery = query.replace(/@/g, "").trim().toLowerCase();
-    const threadInfo = await api.getThreadInfo(threadID);
-    const ids = threadInfo.participantIDs || [];
-    const matches = [];
+                        return message.reply({
+                                body: getLang("success"),
+                                attachment: fs.createReadStream(filePath)
+                        }, () => {
+                                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                        });
 
-    for (const uid of ids) {
-      try {
-        const name = (await usersData.getName(uid)).toLowerCase();
-        if (name.includes(cleanQuery)) {
-          matches.push({ uid, name: await usersData.getName(uid) });
+                } catch (err) {
+                        console.error("Murgi Error:", err);
+                        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                        return message.reply(getLang("error", err.message));
+                }
         }
-      } catch {}
-    }
-
-    return matches;
-  } catch {
-    return [];
-  }
-}
+};

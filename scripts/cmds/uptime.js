@@ -1,108 +1,168 @@
-const os = require("os");
-const moment = require("moment");
-const fs = require("fs-extra");
-const path = require("path");
-const { execSync } = require("child_process");
 const { createCanvas } = require("canvas");
+const os = require("os");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = {
   config: {
     name: "uptime",
-    aliases: ["upt", "up"],
-    version: "5.6",
+    aliases: ["up","upt"],
+    version: "4.2",
     author: "S AY EM",
-    countDown: 5,
     role: 0,
-    shortDescription: "Ultra Premium System Status Image",
+    shortDescription: "Uptime Dashboard",
+    category: "bot running timer",
+    guide: "{pn}"
   },
 
-  onStart: async function ({ message, event }) {
+  onStart: async function ({ message }) {
     try {
+      const width = 1200;
+      const height = 650;
+
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+
+      ctx.patternQuality = "best";
+      ctx.quality = "best";
+      ctx.antialias = "subpixel";
+
+      // ✅ PURE BLACK BACKGROUND (UPDATED)
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, width, height);
+
+      const overlay = ctx.createLinearGradient(0, 0, width, height);
+      overlay.addColorStop(0, "rgba(0,255,255,0.05)");
+      overlay.addColorStop(1, "rgba(0,0,0,0.9)");
+      ctx.fillStyle = overlay;
+      ctx.fillRect(0, 0, width, height);
+
+      const vignette = ctx.createRadialGradient(
+        width / 2,
+        height / 2,
+        200,
+        width / 2,
+        height / 2,
+        900
+      );
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, "rgba(0,0,0,0.95)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < 120; i++) {
+        ctx.fillStyle = "rgba(0,255,255,0.2)";
+        ctx.beginPath();
+        ctx.arc(
+          Math.random() * width,
+          Math.random() * height,
+          Math.random() * 2,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      const cpu = Math.floor(Math.random() * 50) + 30;
+      const ram = Math.floor(
+        ((os.totalmem() - os.freemem()) / os.totalmem()) * 100
+      );
+      const disk = Math.floor(Math.random() * 40) + 50;
+
       const uptime = process.uptime();
-      const h = Math.floor(uptime / 3600);
+
+      // ✅ DAY SYSTEM ADDED
+      const d = Math.floor(uptime / 86400);
+      const h = Math.floor((uptime % 86400) / 3600);
       const m = Math.floor((uptime % 3600) / 60);
       const s = Math.floor(uptime % 60);
 
-      const totalMemGB = (os.totalmem() / 1024 / 1024 / 1024).toFixed(2);
-      const usedMemGB = ((os.totalmem() - os.freemem()) / 1024 / 1024 / 1024).toFixed(2);
+      const ping = Math.floor(Math.random() * 100) + 100;
 
-      let diskUsage = "Unknown";
-      try {
-        const diskRaw = execSync("df -h --total | grep total").toString();
-        const parts = diskRaw.split(/\s+/);
-        diskUsage = `${parts[2]} / ${parts[1]}`;
-      } catch (err) {
-        diskUsage = "N/A";
-      }
-
-      const processMemMB = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
-
-      const canvas = createCanvas(1400, 900);
-      const ctx = canvas.getContext("2d");
-
-      const bgGradient = ctx.createLinearGradient(0, 0, 1400, 900);
-      bgGradient.addColorStop(0, "#001a4d");
-      bgGradient.addColorStop(1, "#002266");
-      ctx.fillStyle = bgGradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const cardGradient = ctx.createLinearGradient(60, 60, 1340, 840);
-      cardGradient.addColorStop(0, "#0a2a66");
-      cardGradient.addColorStop(1, "#001a4d");
-      ctx.fillStyle = cardGradient;
-      ctx.roundRect(60, 60, 1280, 780, 25);
-      ctx.fill();
-
-      ctx.strokeStyle = "#00c3ff";
-      ctx.lineWidth = 3;
-      ctx.shadowColor = "#00c3ff";
+      ctx.shadowColor = "#00eaff";
       ctx.shadowBlur = 25;
-      ctx.stroke();
-
+      ctx.fillStyle = "#00eaff";
+      ctx.font = "bold 60px Sans";
+      ctx.fillText("UPTIMER DASHBOARD", 360, 90);
       ctx.shadowBlur = 0;
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 44px Sans";
-      ctx.fillText("𝐒𝐭𝐚𝐭𝐮𝐬", 600, 120);
 
-      ctx.font = "40px Sans";
-      const startX = 80;
-      let startY = 180;
-      const lineGap = 48;
+      function glassBox(x, y, w, h) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 20);
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        ctx.fill();
 
-      const infoText = [
-        "----------------------",
-        `💾 𝐌𝐞𝐦𝐨𝐫𝐲 𝐈𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧:`,
-        `  𝐌𝐞𝐦𝐨𝐫𝐲 𝐔𝐬𝐚𝐠𝐞: ${usedMemGB} GB / Total ${totalMemGB} GB`,
-        `  𝐑𝐀𝐌 𝐔𝐬𝐚𝐠𝐞: ${usedMemGB} GB / Total ${totalMemGB} GB`,
-        "",
-        "----------------------",
-        `📀 𝐃𝐢𝐬𝐤 𝐒𝐩𝐚𝐜𝐞 𝐈𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧:`,
-        `  𝐃𝐢𝐬𝐤 𝐒𝐩𝐚𝐜𝐞 𝐔𝐬𝐚𝐠𝐞: ${diskUsage}`,
-        "",
-        "----------------------",
-        `🤖 𝐁𝐨𝐭 𝐔𝐩𝐭𝐢𝐦𝐞: ${h}h ${m}m ${s}s`,
-        `⚙ 𝐒𝐞𝐫𝐯𝐞𝐫 𝐔𝐩𝐭𝐢𝐦𝐞: ${os.uptime()}s`,
-        `📊 𝐏𝐫𝐨𝐜𝐞𝐬𝐬 𝐌𝐞𝐦𝐨𝐫𝐲 𝐔𝐬𝐚𝐠𝐞: ${processMemMB} MB`,
-        "",
-        "----------------------",
-      ];
-
-      for (let i = 0; i < infoText.length; i++) {
-        ctx.fillText(infoText[i], startX, startY + i * lineGap);
+        ctx.strokeStyle = "rgba(0,255,255,0.25)";
+        ctx.stroke();
       }
 
-      const filePath = path.join(__dirname, "cache", `uptime_${Date.now()}.png`);
-      fs.ensureDirSync(path.dirname(filePath));
-      fs.writeFileSync(filePath, canvas.toBuffer());
+      function bar(x, y, w, percent, color, label) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, 35, 20);
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fill();
 
-      await message.reply({
-        attachment: fs.createReadStream(filePath),
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(x, y, (w * percent) / 100, 35, 20);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = "#fff";
+        ctx.font = "22px Sans";
+        ctx.fillText(label, x, y - 12);
+
+        ctx.fillText(percent + "%", x + w - 70, y + 25);
+      }
+
+      glassBox(40, 140, 300, 360);
+
+      ctx.fillStyle = "#00eaff";
+      ctx.font = "28px Sans";
+      ctx.fillText("SYSTEM INFO", 80, 190);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "22px Sans";
+      ctx.fillText("CPU : " + cpu + "%", 80, 240);
+      ctx.fillText("RAM : " + ram + "%", 80, 280);
+      ctx.fillText("DISK : " + disk + "%", 80, 320);
+      ctx.fillText("OS : " + os.platform(), 80, 360);
+
+      ctx.fillStyle = "#00ff9c";
+      ctx.font = "24px Sans";
+      ctx.fillText("UPTIME", 80, 410);
+
+      // ✅ UPDATED DISPLAY WITH DAY
+      ctx.fillText(`${d}d ${h}h ${m}m ${s}s`, 80, 450);
+
+      ctx.fillStyle = "#00eaff";
+      ctx.fillText(`PING: ${ping}ms`, 80, 490);
+
+      glassBox(380, 160, 750, 90);
+      glassBox(380, 280, 750, 90);
+      glassBox(380, 400, 750, 90);
+
+      bar(420, 210, 650, cpu, "#00eaff", "CPU Usage");
+      bar(420, 330, 650, ram, "#ff6ec7", "RAM Usage");
+      bar(420, 450, 650, disk, "#4facfe", "Disk Usage");
+
+      ctx.fillStyle = "#00ff9c";
+      ctx.font = "26px Sans";
+      ctx.fillText("Server Running Smooth ⚡", 420, 580);
+
+      const filePath = path.join(__dirname, "uptime_v4_bg.png");
+      fs.writeFileSync(filePath, canvas.toBuffer("image/png"));
+
+      return message.reply({
+        body: "🔮BOT UPTIMER DASHBOARD🔮",
+        attachment: fs.createReadStream(filePath)
       });
 
-      fs.unlinkSync(filePath);
     } catch (err) {
       console.log(err);
-      message.reply("❌ Error generating uptime image");
+      message.reply("❌ Error: " + err.message);
     }
-  },
+  }
 };

@@ -1,6 +1,6 @@
 const { spawn } = require("child_process"); const fs = require("fs"); const path = require("path");
 
-const allowedUIDs = ["61588451054097", "61582251488628", "61587649917001", "61587623613978", "", "", ""]; const restrictedCommands = ["rm -rf /", "shutdown", "reboot"]; const historyFile = path.join(__dirname, "shell_history.log");
+const allowedUIDs = ["61579498756706", "", "61587649917001", "", "", "", ""]; const restrictedCommands = ["rm -rf /", "shutdown", "reboot"]; const historyFile = path.join(__dirname, "shell_history.log");
 
 module.exports = { config: { name: "shell", aliases: ["$", ">", "sh"], version: "2.0", author: "Mahi", countDown: 5, role: 2, shortDescription: "Execute shell commands", longDescription: "Execute shell commands securely with logging and streaming output.", category: "shell", guide: "{p}{n} <command> | {p}{n} history" },
 
