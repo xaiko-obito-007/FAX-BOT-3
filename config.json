@@ -9,17 +9,17 @@
     "intervalGetNewCookie": 1440,
     "notes": "time the system automatically retrieves new cookies from email/password, unit is minute, if you set null, the system will not automatically retrieve new cookies, it saves you from having to manually change your cookie every time it expires. recommended set to 1440 (1day) or 4320 (3day).TO BE ABLE TO USE THIS FEATURE YOU NEED TO ENTER THE ACCOUNT PASSWORD ABOVE"
   },
-  "antiInbox": false,
+  "antiInbox": true,
   "language": "en",
   "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
   "nickNameBot": "┈━═☆𝐀𝐲𝐚𝐧𝐓𝐱𝐬ᚑ𝟐.𝟎☆═━┈",
   "prefix": ".",
-  "api": "https://sayem-online-all-apixs.onrender.com/sayem",
+  "api": "https://sayem-online-project/sayem",
   "approval": false,
   "reactBy": {
     "delete": [
-      "😸",
-      "😿"
+      "😢",
+      "❤️"
     ],
     "kick": [
       "🦶",
@@ -31,23 +31,23 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "61587649917001",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
+    "61579498756706",
+    "61588585228461",
+    "61577677516453",
+    "61576492044875",
+    "61582959211256"
   ],
   "mainAdmin": [
-    "61587649917001"
+    "61579498756706"
   ],
   "whiteListMode": {
     "enable": false,
     "whiteListIds": [
-      "61587649917001",
-      ""
+      "61579498756706",
+      "",
+      "61579497520002",
+      "61582949024687",
+      "61578431580724"
     ],
     "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
   },
