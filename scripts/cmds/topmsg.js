@@ -5,7 +5,7 @@ const axios = require("axios");
 const mongoose = require("mongoose");
 
 // 🔥 MongoDB URI এখানে বসা
-const MONGO_URI = "mongodb+srv://video09:Umm143@sayem50.pqzsqng.mongodb.net/mydbname?retryWrites=true&w=majority";
+const MONGO_URI = "mongodb+srv://baby-apixs:Baby143143@sayem50.pqzsqng.mongodb.net/mydbname?retryWrites=true&w=majority";
 
 // connect mongo (once)
 if (!global._mongoConnected) {
