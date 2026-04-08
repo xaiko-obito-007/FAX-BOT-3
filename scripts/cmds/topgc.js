@@ -3,7 +3,7 @@ const path = require("path");
 const mongoose = require("mongoose");
 const { createCanvas, loadImage } = require("canvas");
 
-const MONGO_URI = "mongodb+srv://video09:Umm143@sayem50.pqzsqng.mongodb.net/topgc";
+const MONGO_URI = "mongodb+srv://baby-apixs:Baby143143@sayem50.pqzsqng.mongodb.net/topgc";
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
