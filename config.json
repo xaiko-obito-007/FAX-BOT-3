@@ -31,7 +31,11 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "61567590682406"
+    "61567590682406",
+    "61579497520002",
+    "0",
+    "100073972493628",
+    "61585738257999"
   ],
   "mainAdmin": [
     "61567590682406"
@@ -68,7 +72,7 @@
       "refreshToken": "1//04cWW09MPjCJ_CgYIARAAGAQSNwF-L9Ire-jJJEWxsxMhSN7TIWIxasWAgO185qwOrVpFwcCVWGhdPknecew-nRUQk9GAnLG7bXw"
     },
     "gRecaptcha": {
-     "siteKey": "",
+      "siteKey": "",
       "secretKey": ""
     }
   },
